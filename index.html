@@ -1,0 +1,2348 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مدرسة الثروات الوطنية الخاصة | نظام إدارة تقارير الرسوم الدراسية المعتمد ADEK</title>
+    
+    <!-- Tailwind CSS with custom branding -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    screens: { 'xs': '480px' },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 500: '#16a34a',
+                            600: '#15803d', 700: '#166534', 800: '#14532d', 900: '#052e16'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Cairo', 'Inter', 'system-ui', 'sans-serif'],
+                        official: ['Arial', 'Tahoma', 'Cairo', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Icons & Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Libraries -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.6/pizzip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.47.1/docxtemplater.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+        /* Print Settings */
+        @media print {
+            body { background: white !important; color: black !important; font-size: 11pt; padding: 0 !important; margin: 0 !important; }
+            .no-print, #sidebar, #sidebar-backdrop, #topbar, #toast-container, .modal-backdrop, #app-container { display: none !important; }
+            #print-section { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .official-sheet {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                min-height: 297mm !important;
+                margin: 0 !important;
+                padding: 12mm 15mm 15mm 15mm !important;
+                box-sizing: border-box !important;
+            }
+        }
+        @page { size: A4 portrait; margin: 0; }
+
+        /* Exact A4 Sheet Styling */
+        .official-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            margin: auto;
+            background: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            font-family: Arial, 'Cairo', sans-serif;
+            color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .official-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            text-align: center;
+        }
+        .official-table th, .official-table td {
+            border: 1.5px solid #000;
+            padding: 6px 3px;
+            font-size: 11px;
+        }
+
+        @media screen and (max-width: 850px) {
+            .official-sheet {
+                width: 100% !important;
+                min-height: auto !important;
+                padding: 1.25rem !important;
+                box-shadow: none !important;
+            }
+        }
+
+        .sidebar-collapsed { width: 4.8rem !important; }
+        .sidebar-collapsed .sidebar-text,
+        .sidebar-collapsed .sidebar-header-title,
+        .sidebar-collapsed .sidebar-badge,
+        .sidebar-collapsed .sidebar-section-title,
+        .sidebar-collapsed .sidebar-footer-text { display: none !important; }
+        .sidebar-collapsed .nav-item { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; }
+        .sidebar-collapsed .nav-item i { margin: 0 !important; font-size: 1.15rem !important; }
+        .sidebar-collapsed .brand-container { justify-content: center !important; padding: 0 !important; }
+    </style>
+</head>
+<body class="h-full bg-slate-100/90 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased transition-colors duration-200">
+
+    <div id="toast-container" class="fixed top-4 end-4 start-4 sm:start-auto z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+    <div id="sidebar-backdrop" onclick="UI.toggleSidebar(false)" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+    <div id="app-container" class="flex h-screen overflow-hidden">
+        
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="fixed lg:static inset-y-0 start-0 z-50 w-72 bg-white dark:bg-slate-900 border-e border-slate-200/90 dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out translate-x-full lg:translate-x-0 flex-shrink-0 shadow-2xl lg:shadow-none">
+            <div class="h-20 flex items-center justify-between px-4 border-b border-slate-200/80 dark:border-slate-800">
+                <div class="brand-container flex items-center gap-3 truncate">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-700 via-brand-600 to-emerald-500 flex items-center justify-center text-white text-xl shadow-md shadow-brand-600/30 flex-shrink-0">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div class="sidebar-header-title truncate">
+                        <h1 class="font-black text-slate-900 dark:text-white leading-tight truncate text-xs sm:text-sm">مدرسة الثروات الوطنية</h1>
+                        <span class="text-[10px] text-brand-600 dark:text-brand-400 font-bold block truncate">ADEK School ID: 9254</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1">
+                    <button onclick="UI.toggleDesktopSidebar()" class="hidden lg:flex p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-xl transition">
+                        <i id="collapse-icon" class="fa-solid fa-angles-right text-xs"></i>
+                    </button>
+                    <button onclick="UI.toggleSidebar(false)" class="lg:hidden p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="flex-1 overflow-y-auto px-3.5 py-4 space-y-4">
+                <div>
+                    <span class="sidebar-section-title px-3 text-[10px] font-black tracking-wider text-slate-400 uppercase block mb-1.5">الرئيسية والمالية</span>
+                    <div class="space-y-1">
+                        <button onclick="UI.showView('dashboard')" data-nav="dashboard" class="nav-item active w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-400">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-chart-pie w-5 text-center text-sm"></i>
+                                <span class="sidebar-text">لوحة المؤشرات</span>
+                            </div>
+                        </button>
+                        <button onclick="UI.showView('create-report')" data-nav="create-report" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-sm text-brand-600"></i>
+                                <span class="sidebar-text">إصدار تقرير الرسوم (ADEK)</span>
+                            </div>
+                            <span class="sidebar-badge px-1.5 py-0.5 rounded-md text-[9px] font-black bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">معتمد</span>
+                        </button>
+                        <button onclick="UI.showView('reports-history')" data-nav="reports-history" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-clock-rotate-left w-5 text-center text-indigo-500"></i>
+                                <span class="sidebar-text">أرشيف التقارير المعتمدة</span>
+                            </div>
+                            <span id="badge-reports-count" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="sidebar-section-title px-3 text-[10px] font-black tracking-wider text-slate-400 uppercase block mb-1.5">الرسوم والطلاب</span>
+                    <div class="space-y-1">
+                        <button onclick="UI.showView('students')" data-nav="students" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-user-graduate w-5 text-center text-blue-500"></i>
+                                <span class="sidebar-text">سجل بيانات الطلاب</span>
+                            </div>
+                            <span id="badge-students-count" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 dark:bg-blue-950 text-blue-600">0</span>
+                        </button>
+                        <button onclick="UI.showView('fees')" data-nav="fees" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-coins w-5 text-center text-amber-500"></i>
+                                <span class="sidebar-text">هيكل الرسوم المعتمد (الصفوف)</span>
+                            </div>
+                            <span class="sidebar-badge px-1.5 py-0.5 rounded-md text-[9px] font-black bg-amber-100 text-amber-800">تلقائي</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="sidebar-section-title px-3 text-[10px] font-black tracking-wider text-slate-400 uppercase block mb-1.5">القوالب والسحابة</span>
+                    <div class="space-y-1">
+                        <button onclick="UI.showView('word-templates')" data-nav="word-templates" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-file-word w-5 text-center text-blue-600"></i>
+                                <span class="sidebar-text">قوالب Word الرسمية</span>
+                            </div>
+                            <span id="badge-templates-count" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">1</span>
+                        </button>
+
+                        <button onclick="FirebaseSync.openSettingsModal()" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-fire text-amber-500 text-base"></i>
+                                <span class="sidebar-text">سحابة Firebase</span>
+                            </div>
+                            <span id="sidebar-cloud-badge" class="sidebar-badge px-1.5 py-0.5 rounded-md text-[9px] font-extrabold bg-amber-50 text-amber-600 dark:bg-amber-950/60">محلي</span>
+                        </button>
+
+                        <button onclick="UI.showView('settings')" data-nav="settings" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-sliders w-5 text-center text-slate-500"></i>
+                                <span class="sidebar-text">إعدادات المدرسة</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Operator Card -->
+            <div class="p-3 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+                <div class="flex items-center gap-3 p-2 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-xs">
+                    <div class="relative flex-shrink-0">
+                        <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-xs">
+                            <i class="fa-solid fa-signature"></i>
+                        </div>
+                        <span id="cloud-status-dot" class="absolute -bottom-0.5 -end-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-800"></span>
+                    </div>
+                    <div class="sidebar-footer-text truncate flex-1">
+                        <p class="font-extrabold text-xs text-slate-900 dark:text-white truncate">المحاسب/ة: فوز الوجيه</p>
+                        <span class="text-[10px] text-brand-600 font-bold block truncate">معتمد - ADEK #9254</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN VIEW WRAPPER -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <header id="topbar" class="h-16 sm:h-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between z-20 flex-shrink-0">
+                <div class="flex items-center gap-3 sm:gap-4 truncate">
+                    <button onclick="UI.toggleSidebar()" class="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <div class="truncate">
+                        <h2 class="text-sm sm:text-base md:text-lg font-black text-slate-900 dark:text-white truncate" id="page-title">إصدار تقرير الرسوم الدراسية</h2>
+                        <span class="text-[11px] text-slate-400 font-medium hidden sm:block truncate">مدرسة الثروات الوطنية الخاصة - دائرة التعليم والمعرفة (ADEK 9254)</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <i class="fa-regular fa-calendar-check text-brand-600 text-xs hidden xs:inline"></i>
+                        <select id="global-academic-year" onchange="Events.changeGlobalYear(this.value)" class="bg-transparent text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"></select>
+                    </div>
+
+                    <button onclick="Theme.toggle()" class="p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <i id="theme-icon" class="fa-solid fa-moon text-xs sm:text-sm"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-3.5 sm:p-6 bg-slate-100/60 dark:bg-slate-950 space-y-5 sm:space-y-6">
+
+                <!-- 1. DASHBOARD VIEW -->
+                <section id="view-dashboard" class="space-y-5 sm:space-y-6 hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
+                        <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                            <p class="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide">الطلاب المقيدين</p>
+                            <h3 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1" id="dash-total-students">0</h3>
+                            <p class="text-[11px] text-slate-400 mt-2 font-bold"><span id="dash-active-students" class="text-brand-600 font-black">0</span> طالب مستمر بالدراسة</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                            <p class="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide">المصروفات المعتمدة</p>
+                            <h3 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1"><span id="dash-total-fees">0.00</span> AED</h3>
+                            <p class="text-[11px] text-slate-400 mt-2 font-semibold">حسب تقارير ADEK الرسمية</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                            <p class="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide">المسدد (Paid)</p>
+                            <h3 class="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1"><span id="dash-total-paid">0.00</span> AED</h3>
+                            <p class="text-[11px] text-emerald-600 font-extrabold mt-2"><span id="dash-paid-percent">0%</span> نسبة التحصيل</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                            <p class="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide">الرسوم المتبقية (Remaining)</p>
+                            <h3 class="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 mt-1"><span id="dash-total-balance">0.00</span> AED</h3>
+                            <p class="text-[11px] text-slate-400 mt-2 font-bold"><span id="dash-total-reports" class="font-black text-slate-700 dark:text-slate-200">0</span> تقرير ADEK صادر</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. CREATE REPORT VIEW (MAIN FORM) -->
+                <section id="view-create-report" class="space-y-4 sm:space-y-6">
+                    <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                        
+                        <div class="border-b border-slate-200 dark:border-slate-800 pb-3.5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                            <div>
+                                <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white">إصدار تقرير رسوم دراسية معتمد - SCHOOL FEES REPORT (ADEK)</h3>
+                                <p class="text-[11px] text-slate-400 mt-0.5">البحث السريع عن الطالب، تفعيل خيار المواصلات أو إلغاؤه، وتحميل الرسوم الرسمية تلقائياً.</p>
+                            </div>
+                            <span class="px-3 py-1 bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 rounded-lg text-xs font-black">School ID: 9254</span>
+                        </div>
+
+                        <form id="create-report-form" onsubmit="Reports.saveReport(event)" class="space-y-5">
+                            
+                            <!-- Search & Academic Year & Quick Add Student -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">السنة الدراسية (Academic Year) *</label>
+                                    <select id="rep-year" onchange="Reports.onYearOrStudentChange()" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none"></select>
+                                </div>
+
+                                <div class="md:col-span-2 relative">
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                            <i class="fa-solid fa-magnifying-glass text-brand-600"></i>
+                                            <span>البحث المتقدم واختيار الطالب (بالاسم، eSIS ID، أو الهوية) *</span>
+                                        </label>
+                                        
+                                        <!-- QUICK ADD STUDENT BUTTON DIRECTLY IN CREATE REPORT -->
+                                        <button type="button" onclick="Students.openModal(null, true)" class="text-brand-600 hover:text-brand-700 text-xs font-black flex items-center gap-1">
+                                            <i class="fa-solid fa-user-plus text-[11px]"></i>
+                                            <span>+ إضافة طالب جديد سريعاً</span>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="flex gap-2">
+                                        <select id="rep-quick-grade-filter" onchange="Reports.filterStudentsSearch()" class="w-28 sm:w-36 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none">
+                                            <option value="ALL">كل الصفوف</option>
+                                        </select>
+
+                                        <div class="relative flex-1">
+                                            <input type="text" id="rep-student-search-input" oninput="Reports.filterStudentsSearch()" onfocus="Reports.showDropdown(true)" placeholder="اكتب رقم الطالب eSIS ID أو اسمه بالعربي أو الإنجليزي..." autocomplete="off" class="w-full ps-9 pe-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500">
+                                            <span class="absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400 pointer-events-none">
+                                                <i class="fa-solid fa-search text-xs"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <input type="hidden" id="rep-selected-student-id" required>
+                                    <div id="rep-student-dropdown" class="absolute start-0 end-0 mt-1 max-h-60 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl shadow-2xl z-50 hidden">
+                                        <div id="rep-dropdown-list" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Selected Student Info Badge -->
+                            <div id="rep-student-selected-badge" class="p-3.5 sm:p-4 bg-emerald-50 dark:bg-brand-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3 items-center">
+                                <div><span class="text-slate-500 block font-semibold text-[10px]">Student eSIS ID:</span><span id="rep-disp-id" class="font-bold font-mono text-brand-800 dark:text-brand-300 text-sm">-</span></div>
+                                <div><span class="text-slate-500 block font-semibold text-[10px]">اسم الطالب:</span><span id="rep-disp-name" class="font-bold text-slate-900 dark:text-white truncate block">-</span></div>
+                                <div><span class="text-slate-500 block font-semibold text-[10px]">الصف الدراسي / Grade:</span><span id="rep-disp-grade" class="font-bold text-brand-700 dark:text-brand-400">-</span></div>
+                                <div><span class="text-slate-500 block font-semibold text-[10px]">الهوية الإماراتية (EID):</span><span id="rep-disp-eid" class="font-mono text-slate-700 dark:text-slate-300 font-bold truncate block">-</span></div>
+                            </div>
+
+                            <!-- Transport Options Toggle Box -->
+                            <div class="p-3.5 bg-amber-50/70 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center text-sm flex-shrink-0">
+                                        <i class="fa-solid fa-bus"></i>
+                                    </div>
+                                    <div>
+                                        <span class="font-bold text-xs text-slate-900 dark:text-white block">خدمة النقل والمواصلات المدرسية</span>
+                                        <span class="text-[11px] text-slate-500 dark:text-slate-400">حدد هل التقرير يشمل خدمة الحافلات المعتمدة أم بدون مواصلات</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <button type="button" id="btn-transport-yes" onclick="Reports.setTransport(true)" class="px-4 py-1.5 rounded-lg text-xs font-black transition bg-brand-600 text-white shadow-xs">
+                                        <i class="fa-solid fa-check me-1"></i> مع مواصلات
+                                    </button>
+                                    <button type="button" id="btn-transport-no" onclick="Reports.setTransport(false)" class="px-4 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+                                        بدون مواصلات (0)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- ADEK Approved Breakdown (Auto-Filled) -->
+                            <div class="space-y-3 pt-2">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                                        <i class="fa-solid fa-list-check text-brand-600"></i>
+                                        <span>الجدول 1: الرسوم المعتمدة من دائرة التعليم والمعرفة (AED) - تملأ آلياً:</span>
+                                    </h4>
+                                    <span class="text-[11px] text-brand-700 font-bold">تظهر تلقائياً حسب هيكل الرسوم المعتمد</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">الرسوم الدراسية (Academic Tuition)</label>
+                                        <input type="number" inputmode="decimal" id="fee-tuition" oninput="Reports.calculate()" step="0.01" min="0" value="0" required class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">الكتب الدراسية (Books)</label>
+                                        <input type="number" inputmode="decimal" id="fee-books" oninput="Reports.calculate()" step="0.01" min="0" value="0" class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">المواصلات (Transportation)</label>
+                                        <input type="number" inputmode="decimal" id="fee-transport" oninput="Reports.calculate()" step="0.01" min="0" value="0" class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">الزي المدرسي (Uniform)</label>
+                                        <input type="number" inputmode="decimal" id="fee-uniform" oninput="Reports.calculate()" step="0.01" min="0" value="0" class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-black text-brand-700 dark:text-brand-400 mb-1">المجموع الكلي (Total)</label>
+                                        <input type="number" id="fee-approved-total" readonly class="w-full p-2.5 bg-brand-50 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-900 rounded-xl font-black text-base text-brand-700 dark:text-brand-300 outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Financial Status (Table 2) -->
+                            <div class="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                                <h4 class="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-receipt text-emerald-600"></i>
+                                    <span>الجدول 2: المصروفات المعتمدة والقيمة المسددة والرسوم المتبقية:</span>
+                                </h4>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المصروفات المعتمدة (Approved Fees)</label>
+                                        <input type="number" id="fee-stat-approved" readonly class="w-full p-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1">القيمة المسددة (Paid Value)</label>
+                                        <input type="number" inputmode="decimal" id="fee-paid" oninput="Reports.calculate()" step="0.01" min="0" value="0" class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-base text-emerald-600 outline-none focus:ring-2 focus:ring-emerald-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">الرسوم الفعلية (Actual Fees)</label>
+                                        <input type="number" inputmode="decimal" id="fee-actual" oninput="Reports.calculate(false)" step="0.01" min="0" value="0" class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-base text-blue-600 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-rose-600 dark:text-rose-400 mb-1">الرسوم المتبقية (Remaining Fees)</label>
+                                        <input type="number" id="fee-remaining" readonly class="w-full p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl font-black text-base text-rose-600 outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">تاريخ الاعتماد (يعتمد بتاريخ)</label>
+                                    <input type="date" id="rep-date" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">المحاسب/ة المعتمد/ة</label>
+                                    <input type="text" id="rep-accountant" value="فوز الوجيه" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none">
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+                                <button type="reset" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl">إعادة ضبط</button>
+                                <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-xs rounded-xl shadow-md shadow-brand-600/30 transition flex items-center gap-2">
+                                    <i class="fa-solid fa-file-circle-check"></i>
+                                    <span>اعتماد وتوليد تقرير ADEK الرسمي</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- 3. STUDENTS VIEW -->
+                <section id="view-students" class="space-y-4 sm:space-y-6 hidden">
+                    <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3.5">
+                        <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                            <div class="relative flex-1">
+                                <span class="absolute inset-y-0 start-0 flex items-center ps-3.5 text-slate-400 pointer-events-none">
+                                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                                </span>
+                                <input type="text" id="student-search-input" oninput="Students.handleSearch(this.value)" placeholder="بحث بالاسم، رقم الطالب eSIS ID، الهوية..." class="w-full ps-10 pe-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-brand-500">
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button onclick="Students.openModal()" class="px-3.5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-user-plus text-xs"></i>
+                                    <span>إضافة طالب جديد</span>
+                                </button>
+                                <button onclick="Excel.openImportModal()" class="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-file-excel text-xs"></i>
+                                    <span>استيراد Excel</span>
+                                </button>
+                                <button onclick="Excel.exportStudents()" class="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-download text-xs"></i>
+                                    <span>تصدير</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Fixed Filters Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 mb-1 uppercase">تصفية حسب الصف</label>
+                                <select id="filter-grade" onchange="Students.applyFilters()" class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 mb-1 uppercase">السنة الدراسية</label>
+                                <select id="filter-year" onchange="Students.applyFilters()" class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 mb-1 uppercase">حالة القيد</label>
+                                <select id="filter-status" onchange="Students.applyFilters()" class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none">
+                                    <option value="ALL">الكل</option>
+                                    <option value="ACTIVE">مستمر بالدراسة</option>
+                                    <option value="WITHDRAWN">منسحب</option>
+                                    <option value="GRADUATED">متخرج</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-start text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-extrabold border-b border-slate-200 dark:border-slate-800 text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 text-start">رقم الطالب (eSIS ID)</th>
+                                        <th class="py-3 px-4 text-start">اسم الطالب</th>
+                                        <th class="py-3 px-4 text-start">الصف الدراسي</th>
+                                        <th class="py-3 px-4 text-start">الهوية الإماراتية (EID)</th>
+                                        <th class="py-3 px-4 text-start">تاريخ الميلاد</th>
+                                        <th class="py-3 px-4 text-center">السنة</th>
+                                        <th class="py-3 px-4 text-center">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="students-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-semibold"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. FEE BENCHMARKS -->
+                <section id="view-fees" class="space-y-4 sm:space-y-6 hidden">
+                    <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white">هيكل الرسوم المعتمدة من دائرة التعليم والمعرفة (KG1 - G12)</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">حدد بنود الرسوم لكل صف ليتم ملء أي تقرير صادر للطالب أوتوماتيكياً بمجرد اختياره.</p>
+                        </div>
+                        <select id="fee-table-year-filter" onchange="Fees.render()" class="w-full sm:w-auto p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none"></select>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-start text-xs whitespace-nowrap">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-extrabold border-b border-slate-200 dark:border-slate-800 text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 text-start">الصف الدراسي</th>
+                                        <th class="py-3 px-4 text-end">الرسوم الدراسية (Tuition)</th>
+                                        <th class="py-3 px-4 text-end">الكتب (Books)</th>
+                                        <th class="py-3 px-4 text-end">المواصلات (Transport)</th>
+                                        <th class="py-3 px-4 text-end">الزي (Uniform)</th>
+                                        <th class="py-3 px-4 text-end">المجموع الكلي (Total)</th>
+                                        <th class="py-3 px-4 text-center">إجراء وتعديل</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fees-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-semibold"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. REPORTS HISTORY -->
+                <section id="view-reports-history" class="space-y-4 sm:space-y-6 hidden">
+                    <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white">أرشيف تقارير الرسوم الدراسية المعتمدة (ADEK)</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">معاينة طبق الأصل، طباعة، وتصدير بصيغة ملف Word و PDF.</p>
+                        </div>
+                        <div class="w-full sm:w-72">
+                            <input type="text" oninput="Reports.filterHistory(this.value)" placeholder="بحث برقم التقرير أو اسم الطالب..." class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none">
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-start text-xs whitespace-nowrap">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-extrabold border-b border-slate-200 dark:border-slate-800 text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 text-start">رقم التقرير</th>
+                                        <th class="py-3 px-4 text-start">اسم الطالب</th>
+                                        <th class="py-3 px-4 text-center">الصف</th>
+                                        <th class="py-3 px-4 text-center">السنة</th>
+                                        <th class="py-3 px-4 text-end">المصروفات المعتمدة</th>
+                                        <th class="py-3 px-4 text-end">المسدد</th>
+                                        <th class="py-3 px-4 text-end">المتبقي</th>
+                                        <th class="py-3 px-4 text-center">المحاسب/ة</th>
+                                        <th class="py-3 px-4 text-center">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reports-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-semibold"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. WORD TEMPLATES -->
+                <section id="view-word-templates" class="space-y-4 sm:space-y-6 hidden">
+                    <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+                            <div>
+                                <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white">قوالب Microsoft Word المعتمدة (.docx)</h3>
+                                <p class="text-[11px] text-slate-400 mt-0.5">القالب المرفق مدمج ومفعل افتراضياً لتوليد التقارير بنفس تصميم المدرسة.</p>
+                            </div>
+                            <button onclick="WordTemplates.openModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                                <span>إضافة قالب Word جديد</span>
+                            </button>
+                        </div>
+                        <div id="word-templates-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4"></div>
+                    </div>
+                </section>
+
+                <!-- 7. SETTINGS & LOGOS -->
+                <section id="view-settings" class="space-y-4 sm:space-y-6 hidden">
+                    <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                        <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">بيانات الاعتماد وإعدادات المدرسة</h3>
+                        <form onsubmit="Settings.save(event)" class="space-y-4 text-xs">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block font-bold mb-1">اسم المدرسة (عربي)</label>
+                                    <input type="text" id="set-school-name-ar" value="مدرسة الثروات الوطنية الخاصة" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none">
+                                </div>
+                                <div>
+                                    <label class="block font-bold mb-1">School Name (English)</label>
+                                    <input type="text" id="set-school-name-en" value="Altharawat National Private School" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none">
+                                </div>
+                                <div>
+                                    <label class="block font-bold mb-1">رقم المدرسة (School ID)</label>
+                                    <input type="text" id="set-school-id" value="9254" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold outline-none">
+                                </div>
+                                <div>
+                                    <label class="block font-bold mb-1">المحاسب/ة المعتمد/ة</label>
+                                    <input type="text" id="set-principal" value="فوز الوجيه" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none">
+                                </div>
+                            </div>
+                            <div class="flex justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
+                                <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl shadow-sm transition">حفظ التغييرات</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: ADD / EDIT STUDENT (IMPROVED & ERROR FREE)                         -->
+    <!-- ========================================================================= -->
+    <div id="student-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
+            <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="text-sm font-black text-slate-900 dark:text-white" id="student-modal-title">إضافة طالب جديد</h3>
+                <button type="button" onclick="Students.closeModal()" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="Students.handleSubmit(event)" class="p-5 overflow-y-auto space-y-3.5 text-xs">
+                <input type="hidden" id="m-stu-edit-id">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block font-bold mb-1">Student eSIS ID (رقم الطالب) *</label>
+                        <input type="text" id="m-stu-id" required placeholder="مثال: 9254001" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">الصف الدراسي *</label>
+                        <select id="m-stu-grade" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">اسم الطالب (عربي) *</label>
+                        <input type="text" id="m-stu-name-ar" required placeholder="الاسم بالعربية" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Full Name (English) *</label>
+                        <input type="text" id="m-stu-name-en" required placeholder="Full Name in English" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none focus:ring-2 focus:ring-brand-500 uppercase">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">الهوية الإماراتية (EID No) *</label>
+                        <input type="text" id="m-stu-eid" oninput="Students.formatEmiratesId(this)" required placeholder="784-XXXX-XXXXXXX-X" maxlength="18" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">تاريخ الميلاد (Birth Date) *</label>
+                        <input type="date" id="m-stu-dob" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">السنة الدراسية *</label>
+                        <select id="m-stu-year" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">حالة القيد</label>
+                        <select id="m-stu-status" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none">
+                            <option value="ACTIVE">مستمر بالدراسة</option>
+                            <option value="WITHDRAWN">منسحب</option>
+                            <option value="GRADUATED">متخرج</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button type="button" onclick="Students.closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 font-bold rounded-xl">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 bg-brand-600 text-white font-black rounded-xl shadow hover:bg-brand-700 transition">حفظ الطالب</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT GRADE FEE BENCHMARK -->
+    <div id="fee-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="text-sm font-black text-slate-900 dark:text-white" id="fee-modal-title">تحديد رسوم الصف المعتمدة</h3>
+                <button onclick="Fees.closeModal()" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="Fees.saveBenchmark(event)" class="p-5 space-y-3 text-xs">
+                <input type="hidden" id="fee-m-year">
+                <input type="hidden" id="fee-m-grade">
+                <div>
+                    <label class="block font-bold mb-1">الرسوم الدراسية (Academic Tuition)</label>
+                    <input type="number" id="fee-m-tuition" step="0.01" min="0" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">الكتب الدراسية (Books)</label>
+                    <input type="number" id="fee-m-books" step="0.01" min="0" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">المواصلات المدرسية (Transportation)</label>
+                    <input type="number" id="fee-m-transport" step="0.01" min="0" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">الزي المدرسي (Uniform)</label>
+                    <input type="number" id="fee-m-uniform" step="0.01" min="0" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button type="button" onclick="Fees.closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 font-bold rounded-xl">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 bg-brand-600 text-white font-black rounded-xl">حفظ الرسوم</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EXCEL IMPORT -->
+    <div id="import-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
+            <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="text-sm font-black text-slate-900 dark:text-white">استيراد كشف طلاب من Excel</h3>
+                <button onclick="Excel.closeImportModal()" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 space-y-3.5 flex-1 overflow-y-auto text-xs">
+                <div onclick="document.getElementById('excel-file-input').click()" class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-brand-500 cursor-pointer">
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden" onchange="Excel.handleFile(event)">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-emerald-600 mb-2"></i>
+                    <p class="font-black text-slate-700 dark:text-slate-200">اضغط لاختيار ملف Excel أو اسحبه إلى هنا</p>
+                    <p class="text-[10px] text-slate-400 mt-1">يدعم: Student ID, Name AR, Name EN, Grade, Emirates ID, Birth Date</p>
+                </div>
+                <div id="import-stats" class="hidden p-3 bg-slate-50 dark:bg-slate-800 rounded-xl flex justify-between font-bold text-[11px]">
+                    <span>السجلات: <span id="imp-total">0</span></span>
+                    <span class="text-emerald-600">صالح: <span id="imp-valid">0</span></span>
+                    <span class="text-amber-600">مكرر: <span id="imp-dup">0</span></span>
+                </div>
+                <div id="import-preview-wrapper" class="hidden max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+                    <table class="w-full text-start text-[11px]">
+                        <thead class="bg-slate-50 dark:bg-slate-800 sticky top-0">
+                            <tr><th class="p-2">#</th><th class="p-2">eSIS ID</th><th class="p-2">الاسم</th><th class="p-2">الصف</th><th class="p-2">الحالة</th></tr>
+                        </thead>
+                        <tbody id="import-tbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2 text-xs">
+                <button onclick="Excel.closeImportModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 font-bold rounded-xl">إلغاء</button>
+                <button id="btn-confirm-import" onclick="Excel.confirmImport()" disabled class="px-5 py-2 bg-emerald-600 text-white font-black rounded-xl shadow disabled:opacity-40">تأكيد الحفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD WORD TEMPLATE -->
+    <div id="word-template-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="text-sm font-black text-slate-900 dark:text-white">إضافة قالب Word رسمي</h3>
+                <button onclick="WordTemplates.closeModal()" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="WordTemplates.save(event)" class="p-5 space-y-3.5 text-xs">
+                <input type="hidden" id="wt-id">
+                <div>
+                    <label class="block font-bold mb-1">اسم القالب التعريفي *</label>
+                    <input type="text" id="wt-name" required placeholder="مثال: نموذج تقرير ADEK المعتمد" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">رابط ملف القالب (.docx URL) *</label>
+                    <input type="url" id="wt-url" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono outline-none">
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button type="button" onclick="WordTemplates.closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 font-bold rounded-xl">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 text-white font-black rounded-xl shadow">حفظ القالب</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: FIREBASE CONFIG -->
+    <div id="firebase-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-3 hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-fire text-amber-500 text-base"></i>
+                    <h3 class="text-sm font-black text-slate-900 dark:text-white">إعدادات قاعدة بيانات Firebase</h3>
+                </div>
+                <button onclick="FirebaseSync.closeSettingsModal()" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 space-y-3 text-xs">
+                <p class="text-slate-500">الصق كائن JSON الخاص بمشروعك في Firebase للمزامنة السحابية:</p>
+                <textarea id="firebase-config-input" rows="7" placeholder='{"apiKey": "AIzaSy...", "projectId": "altharawat-school"}' class="w-full p-3 bg-slate-950 text-emerald-400 font-mono rounded-xl text-[11px] outline-none border border-slate-800"></textarea>
+            </div>
+            <div class="px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2 text-xs">
+                <button onclick="FirebaseSync.closeSettingsModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 font-bold rounded-xl">إلغاء</button>
+                <button onclick="FirebaseSync.saveConfigFromUI()" class="px-5 py-2 bg-brand-600 text-white font-black rounded-xl shadow">اتصال وتفعيل</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: ADEK OFFICIAL A4 REPORT PREVIEW (LTR TABLES & LOWER SIGNATURES)    -->
+    <!-- ========================================================================= -->
+    <div id="report-view-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-2 sm:p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl h-[95vh] flex flex-col border border-slate-200 dark:border-slate-800 overflow-hidden">
+            
+            <!-- Toolbar -->
+            <div class="px-4 sm:px-6 py-3 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 no-print">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <h3 class="font-black text-xs sm:text-sm text-slate-800 dark:text-white">معاينة تقرير الرسوم الدراسية المعتمد (ADEK Official Statement)</h3>
+                </div>
+                
+                <div class="flex items-center gap-2 flex-wrap">
+                    <select id="report-modal-word-selector" class="px-2.5 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold outline-none max-w-[150px]"></select>
+                    
+                    <button onclick="Reports.downloadSelectedWord()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-word"></i>
+                        <span>تصدير Word</span>
+                    </button>
+                    <button onclick="Reports.downloadCurrentPdf()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>حفظ PDF</span>
+                    </button>
+                    <button onclick="Reports.triggerPrint()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i>
+                        <span>طباعة فورية</span>
+                    </button>
+                    <button onclick="Reports.closeModal()" class="p-1.5 text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-xmark text-base"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview Canvas -->
+            <div class="flex-1 overflow-y-auto p-2 sm:p-6 bg-slate-300/70 dark:bg-slate-950 flex justify-center">
+                
+                <!-- START A4 OFFICIAL SHEET -->
+                <div id="printable-a4-sheet" class="official-sheet p-6 sm:p-10 relative flex flex-col justify-between" dir="ltr">
+                    
+                    <!-- TOP CONTENT -->
+                    <div>
+                        <!-- TOP HEADER LOGOS -->
+                        <div class="flex justify-between items-start pb-1 mb-2">
+                            
+                            <!-- SCHOOL LOGO (LEFT): مدرسة الثروات الوطنية -->
+                            <div class="w-24 sm:w-28 text-left">
+                                <img id="a4-tns-logo-img" 
+                                     src="https://placehold.co/120x100/png?text=TNS+Logo" 
+                                     alt="Altharawat National School Logo" 
+                                     class="h-16 sm:h-18 object-contain mx-0">
+                            </div>
+
+                            <!-- ADEK LOGO (RIGHT): دائرة التعليم والمعرفة -->
+                            <div class="w-36 sm:w-44 text-right">
+                                <img id="a4-adek-logo-img" 
+                                     src="https://placehold.co/180x100/png?text=ADEK+Logo" 
+                                     alt="ADEK Department of Education and Knowledge" 
+                                     class="h-16 sm:h-18 object-contain ms-auto">
+                            </div>
+                        </div>
+
+                        <!-- Report Center Title -->
+                        <div class="text-center my-2 pb-0.5">
+                            <h1 class="text-lg sm:text-xl font-bold text-black font-official tracking-normal">تقرير الرسوم الدراسية</h1>
+                            <h2 class="text-xs sm:text-sm font-bold text-black tracking-wider uppercase">SCHOOI FEES REPORT</h2>
+                        </div>
+
+                        <!-- School and Student Header Particulars (Bilingual) -->
+                        <div class="space-y-1.5 my-2.5 text-[11px] text-black">
+                            
+                            <!-- School Name -->
+                            <div class="flex justify-between items-center">
+                                <div class="w-1/2">
+                                    <span class="font-bold">School Name:</span> <span class="ms-1 font-semibold">Altharawat National Private School</span>
+                                </div>
+                                <div class="w-1/2 text-right" dir="rtl">
+                                    <span class="font-bold">اسم المدرسة:</span> <span class="ms-1 font-semibold">الثروات الوطنية الخاصة</span>
+                                </div>
+                            </div>
+
+                            <!-- School ID -->
+                            <div class="flex justify-between items-center">
+                                <div class="w-1/2">
+                                    <span class="font-bold">School ID:</span> <span class="font-bold ms-1">9254</span>
+                                </div>
+                                <div class="w-1/2 text-right" dir="rtl">
+                                    <span class="font-bold">رقم المدرسة:</span> <span class="font-bold ms-1">9254</span>
+                                </div>
+                            </div>
+
+                            <!-- Student Name Certify -->
+                            <div class="flex justify-between items-center">
+                                <div class="w-1/2">
+                                    <span class="font-bold">School administration certifies that student:</span>
+                                    <span id="a4-stu-name-en" class="font-bold ms-1 uppercase">-</span>
+                                </div>
+                                <div class="w-1/2 text-right" dir="rtl">
+                                    <span class="font-bold">تشهد إدارة المدرسة أن الطالب/ة:</span>
+                                    <span id="a4-stu-name-ar" class="font-bold ms-1">-</span>
+                                </div>
+                            </div>
+
+                            <!-- EID No -->
+                            <div class="flex justify-between items-center">
+                                <div class="w-1/2">
+                                    <span class="font-bold">EID No:</span> <span id="a4-stu-eid" class="ms-1">-</span>
+                                </div>
+                                <div class="w-1/2 text-right" dir="rtl">
+                                    <span class="font-bold">رقم الهوية :</span> <span id="a4-stu-eid-ar" class="ms-1">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Birth Date -->
+                            <div class="flex justify-between items-center">
+                                <div class="w-1/2">
+                                    <span class="font-bold">Birth Date:</span> <span id="a4-stu-dob" class="ms-1">-</span>
+                                </div>
+                                <div class="w-1/2 text-right" dir="rtl">
+                                    <span class="font-bold">تاريخ الميلاد:</span> <span id="a4-stu-dob-ar" class="ms-1">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Student eSIS ID -->
+                            <div class="flex justify-between items-center">
+                                <div class="w-1/2">
+                                    <span class="font-bold">Student eSIS ID:</span> <span id="a4-stu-id" class="font-bold ms-1">-</span>
+                                </div>
+                                <div class="w-1/2 text-right" dir="rtl">
+                                    <span class="font-bold">رقم الطالب :</span> <span id="a4-stu-id-ar" class="font-bold ms-1">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Year / Grade -->
+                            <div class="flex justify-between items-center">
+                                <div class="w-1/2">
+                                    <span class="font-bold">Is registered in year / Grade:</span> <span id="a4-stu-grade-en" class="ms-1 font-bold">-</span>
+                                </div>
+                                <div class="w-1/2 text-right" dir="rtl">
+                                    <span class="font-bold">مقيدة/ بالسنه / الصف:</span> <span id="a4-stu-grade-ar" class="ms-1 font-bold">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Study Statement -->
+                            <div class="flex justify-between items-center pt-0.5">
+                                <div class="w-1/2 font-bold">
+                                    And is currently pursing study
+                                </div>
+                                <div class="w-1/2 text-right font-bold" dir="rtl">
+                                    وهو / هي مستمر(ة) بالدراسه حتي تاريخه
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ADEK Approval Headline Text (Bilingual) -->
+                        <div class="text-center my-3 space-y-1">
+                            <p class="font-bold text-black text-[11px] sm:text-xs" dir="rtl">
+                                الرسوم الدراسية المعتمدة من قبل دائرة التعليم والمعرفة للعام الدراسي <span id="a4-rep-year-ar">2026/2027</span> لمدرسة الثروات الوطنية الخاصة الصف <span id="a4-rep-grade-title">KG1</span> كالآتي:
+                            </p>
+                            <p class="text-[10px] sm:text-[11px] font-bold text-black">
+                                ADEK <span id="a4-rep-year-en">2026/2027</span> approved fees for (Altharawat National Private School) Grade <span id="a4-rep-grade-en">KG1</span> as below:
+                            </p>
+                        </div>
+
+                        <!-- ==================================================================== -->
+                        <!-- TABLE 1: FROM LEFT TO RIGHT (LTR)                                   -->
+                        <!-- Col 1 (Left): Grade/Year | Col 6 (Right): Total                      -->
+                        <!-- ==================================================================== -->
+                        <div class="my-3">
+                            <table id="a4-table-1" class="official-table" dir="ltr">
+                                <thead>
+                                    <tr class="font-bold">
+                                        <th style="width: 17%;">الصف/ السنة<br><span class="font-normal text-[10px]">Grade/Year</span></th>
+                                        <th style="width: 17%;">الرسوم الدراسية<br><span class="font-normal text-[10px]">Academic Tuition</span></th>
+                                        <th style="width: 16%;">الكتب الدراسية<br><span class="font-normal text-[10px]">Books</span></th>
+                                        <th style="width: 17%;">المواصلات المدرسية<br><span class="font-normal text-[10px]">Transportation</span></th>
+                                        <th style="width: 16%;">الزي المدرسي<br><span class="font-normal text-[10px]">Uniform</span></th>
+                                        <th style="width: 17%;">المجموع الكلي<br><span class="font-normal text-[10px]">Total</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="font-bold">
+                                        <td class="py-2.5 font-bold" id="a4-tbl-grade-year">-</td>
+                                        <td class="py-2.5" id="a4-tbl-tuition">0.00</td>
+                                        <td class="py-2.5" id="a4-tbl-books">0.00</td>
+                                        <td class="py-2.5" id="a4-tbl-transport">0.00</td>
+                                        <td class="py-2.5" id="a4-tbl-uniform">0.00</td>
+                                        <td class="py-2.5 font-bold" id="a4-tbl-total">0.00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- ==================================================================== -->
+                        <!-- TABLE 2: FROM LEFT TO RIGHT (LTR)                                   -->
+                        <!-- Col 1 (Left): Approved Fees | Col 4 (Right): Remaining Fees          -->
+                        <!-- ==================================================================== -->
+                        <div class="my-4">
+                            <table id="a4-table-2" class="official-table" dir="ltr">
+                                <thead>
+                                    <tr class="font-bold">
+                                        <th style="width: 25%;">المصروفات المعتمدة<br><span class="font-normal text-[10px]">Approved Fees</span></th>
+                                        <th style="width: 25%;">القيمة المسددة<br><span class="font-normal text-[10px]">paid value</span></th>
+                                        <th style="width: 25%;">الرسوم الفعلية<br><span class="font-normal text-[10px]">Actual Fees</span></th>
+                                        <th style="width: 25%;">الرسوم المتبقية<br><span class="font-normal text-[10px]">Remaining Fees</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="font-bold">
+                                        <td class="py-2.5 font-bold" id="a4-stat-approved">0.00</td>
+                                        <td class="py-2.5" id="a4-stat-paid">0.00</td>
+                                        <td class="py-2.5" id="a4-stat-actual">0.00</td>
+                                        <td class="py-2.5 font-bold" id="a4-stat-remaining">0.00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Accountant Attestation Clause -->
+                        <div class="my-4 text-center font-bold text-[11px] sm:text-xs text-black" dir="rtl">
+                            جميع المعلومات المالية و المحاسبية تمت مراجعتها و التدقيق عليها عن طريق المحاسب و تحت مسئوليته و هذا أقرار منه بذلك ....
+                        </div>
+
+                        <!-- INTENTIONAL GENEROUS WHITE SPACE GAP (فراغ أبيض كبير ومريح) -->
+                        <div class="h-28 sm:h-36"></div>
+                    </div>
+
+                    <!-- BOTTOM CONTENT: SIGNATURES, STAMP, AND DATE (LOWERED TO THE BOTTOM) -->
+                    <div class="pt-4 pb-2 border-t-0 text-black">
+                        <div class="grid grid-cols-3 gap-2 text-xs font-bold items-start" dir="rtl">
+                            
+                            <!-- RIGHT: المحاسب/ة: فوز الوجيه -->
+                            <div class="text-start">
+                                <p class="mb-1">المحاسب/ة:</p>
+                                <p id="a4-rep-accountant" class="font-bold text-sm text-black">فوز الوجيه</p>
+                            </div>
+
+                            <!-- CENTER: ختم المدرسة / School Stamp -->
+                            <div class="text-center">
+                                <p class="mb-1">ختم المدرسه</p>
+                                <p class="text-[10px] text-black">School Stam</p>
+                                <div class="w-16 h-16 mx-auto rounded-full border border-dashed border-slate-400 flex items-center justify-center text-[9px] text-slate-400 rotate-[-12deg] mt-2">
+                                    STAMP
+                                </div>
+                            </div>
+
+                            <!-- LEFT: يعتمد بتاريخ -->
+                            <div class="text-end" dir="rtl">
+                                <p>يعتمد بتاريخ:</p>
+                                <p id="a4-rep-date" class="mt-1 font-mono font-bold">-</p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+                <!-- END A4 SHEET -->
+
+            </div>
+        </div>
+    </div>
+
+    <div id="print-section" class="hidden"></div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+    const CONFIG = {
+        schoolNameAr: "مدرسة الثروات الوطنية الخاصة",
+        schoolNameEn: "Altharawat National Private School",
+        schoolId: "9254",
+        defaultAccountant: "فوز الوجيه",
+        currency: "AED",
+        storagePrefix: "ALTHARAWAT_APP_DATA_V7_",
+        officialWordUrl: "https://www.image2url.com/r2/default/files/1788599856569-bc638f9d-1404-439f-affe-555c9dc66ee6.docx",
+        defaultAdekLogo: "https://placehold.co/180x100/png?text=ADEK+Logo",
+        defaultTnsLogo: "https://placehold.co/120x100/png?text=TNS+Logo"
+    };
+
+    const GRADES = [
+        { code: "KG1", nameAr: "روضة أولى (KG1)" },
+        { code: "KG2", nameAr: "روضة ثانية (KG2)" },
+        { code: "G1",  nameAr: "الصف الأول (G1)" },
+        { code: "G2",  nameAr: "الصف الثاني (G2)" },
+        { code: "G3",  nameAr: "الصف الثالث (G3)" },
+        { code: "G4",  nameAr: "الصف الرابع (G4)" },
+        { code: "G5",  nameAr: "الصف الخامس (G5)" },
+        { code: "G6",  nameAr: "الصف السادس (G6)" },
+        { code: "G7",  nameAr: "الصف السابع (G7)" },
+        { code: "G8",  nameAr: "الصف الثامن (G8)" },
+        { code: "G9",  nameAr: "الصف التاسع (G9)" },
+        { code: "G10", nameAr: "الصف العاشر (G10)" },
+        { code: "G11", nameAr: "الصف الحادي عشر (G11)" },
+        { code: "G12", nameAr: "الصف الثاني عشر (G12)" }
+    ];
+
+    function generateAcademicYears() {
+        const years = [];
+        for (let y = 2026; y <= 2045; y++) years.push(`${y}-${y + 1}`);
+        return years;
+    }
+    const ACADEMIC_YEARS = generateAcademicYears();
+    const DEFAULT_YEAR = "2026-2027";
+
+    function getDefaultBenchmarks(year) {
+        return GRADES.map((g, idx) => {
+            const tuition = 12500 + (idx * 500);
+            const books = 800 + (idx * 50);
+            const transport = 3500;
+            const uniform = 450;
+            return {
+                id: `FEE_${year}_${g.code}`,
+                year,
+                gradeCode: g.code,
+                tuition,
+                books,
+                transport,
+                uniform,
+                total: tuition + books + transport + uniform
+            };
+        });
+    }
+
+    const State = {
+        selectedYear: DEFAULT_YEAR,
+        isDesktopCollapsed: false,
+        hasTransport: true,
+        openedFromReportView: false,
+        students: [],
+        reports: [],
+        feeBenchmarks: [],
+        wordTemplates: [],
+        settings: {
+            schoolNameAr: CONFIG.schoolNameAr,
+            schoolNameEn: CONFIG.schoolNameEn,
+            schoolId: CONFIG.schoolId,
+            principal: CONFIG.defaultAccountant,
+            adekLogo: CONFIG.defaultAdekLogo,
+            tnsLogo: CONFIG.defaultTnsLogo
+        },
+        studentFilter: { search: "", grade: "ALL", year: "ALL", status: "ALL" }
+    };
+
+    const LocalStore = {
+        get(k, def = null) {
+            try { const v = localStorage.getItem(CONFIG.storagePrefix + k); return v ? JSON.parse(v) : def; } catch { return def; }
+        },
+        set(k, v) {
+            try { localStorage.setItem(CONFIG.storagePrefix + k, JSON.stringify(v)); } catch {}
+        }
+    };
+
+    let db = null;
+    let isFirebaseActive = false;
+
+    const FirebaseSync = {
+        init() {
+            const saved = LocalStore.get("firebase_config", null);
+            if (saved && saved.apiKey) this.connect(saved);
+            else { this.updateStatus(false, "تخزين محلي آمن"); this.loadFromLocal(); }
+        },
+        connect(cfg) {
+            try {
+                if (!firebase.apps.length) firebase.initializeApp(cfg);
+                db = firebase.firestore();
+                isFirebaseActive = true;
+                this.updateStatus(true, "متصل بالسحابة");
+                UI.showToast("تم الاتصال بقاعدة بيانات Firebase بنجاح", "success");
+                this.syncAllFromCloud();
+            } catch {
+                isFirebaseActive = false;
+                this.updateStatus(false, "فشل الاتصال");
+                this.loadFromLocal();
+            }
+        },
+        updateStatus(active, txt) {
+            const dot = document.getElementById('cloud-status-dot');
+            const badge = document.getElementById('sidebar-cloud-badge');
+            if (dot) dot.className = active ? "absolute -bottom-0.5 -end-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-800" : "absolute -bottom-0.5 -end-0.5 w-3 h-3 rounded-full bg-amber-500 border-2 border-white dark:border-slate-800";
+            if (badge) {
+                badge.innerText = active ? "سحابي" : "محلي";
+                badge.className = active ? "sidebar-badge px-1.5 py-0.5 rounded-md text-[9px] font-extrabold bg-emerald-50 text-emerald-600 dark:bg-emerald-950" : "sidebar-badge px-1.5 py-0.5 rounded-md text-[9px] font-extrabold bg-amber-50 text-amber-600 dark:bg-amber-950/60";
+            }
+        },
+        openSettingsModal() {
+            const cur = LocalStore.get("firebase_config", {});
+            document.getElementById('firebase-config-input').value = Object.keys(cur).length ? JSON.stringify(cur, null, 2) : "";
+            document.getElementById('firebase-modal').classList.remove('hidden');
+        },
+        closeSettingsModal() { document.getElementById('firebase-modal').classList.add('hidden'); },
+        saveConfigFromUI() {
+            try {
+                const cfg = JSON.parse(document.getElementById('firebase-config-input').value.trim());
+                if (!cfg.apiKey) throw new Error();
+                LocalStore.set("firebase_config", cfg);
+                this.closeSettingsModal();
+                this.connect(cfg);
+            } catch {
+                UI.showToast("صيغة إعدادات Firebase غير صحيحة", "error");
+            }
+        },
+        async saveDoc(col, id, data) {
+            LocalStore.set(col, State[col]);
+            UI.updateSidebarBadges();
+            if (isFirebaseActive && db) {
+                try { await db.collection(col).doc(id).set(data, { merge: true }); } catch {}
+            }
+        },
+        async deleteDoc(col, id) {
+            LocalStore.set(col, State[col]);
+            UI.updateSidebarBadges();
+            if (isFirebaseActive && db) {
+                try { await db.collection(col).doc(id).delete(); } catch {}
+            }
+        },
+        async syncAllFromCloud() {
+            if (!isFirebaseActive || !db) return;
+            try {
+                const s = await db.collection("students").get();
+                if (!s.empty) { State.students = s.docs.map(d => d.data()); LocalStore.set("students", State.students); }
+                const r = await db.collection("reports").get();
+                if (!r.empty) { State.reports = r.docs.map(d => d.data()); LocalStore.set("reports", State.reports); }
+                const f = await db.collection("feeBenchmarks").get();
+                if (!f.empty) { State.feeBenchmarks = f.docs.map(d => d.data()); LocalStore.set("feeBenchmarks", State.feeBenchmarks); }
+                App.refreshCurrentView();
+            } catch {}
+        },
+        loadFromLocal() {
+            State.students = LocalStore.get("students", [
+                {
+                    id: "STU_DEFAULT_1",
+                    studentId: "9254001",
+                    nameAr: "محمد أحمد راشد الكعبي",
+                    nameEn: "MOHAMMED AHMED RASHED ALKAABI",
+                    grade: "KG1",
+                    emiratesId: "784-2020-1234567-1",
+                    birthDate: "2020-03-15",
+                    academicYear: DEFAULT_YEAR,
+                    status: "ACTIVE"
+                },
+                {
+                    id: "STU_DEFAULT_2",
+                    studentId: "9254002",
+                    nameAr: "فاطمة سلطان المنصوري",
+                    nameEn: "FATIMA SULTAN ALMANSOORI",
+                    grade: "KG1",
+                    emiratesId: "784-2020-7654321-2",
+                    birthDate: "2020-05-20",
+                    academicYear: DEFAULT_YEAR,
+                    status: "ACTIVE"
+                }
+            ]);
+            State.reports = LocalStore.get("reports", []);
+            State.feeBenchmarks = LocalStore.get("feeBenchmarks", getDefaultBenchmarks(DEFAULT_YEAR));
+            State.wordTemplates = LocalStore.get("wordTemplates", [
+                {
+                    id: "default_adek_template",
+                    name: "قالب تقرير الرسوم الرسمي المعتمد (ADEK)",
+                    url: CONFIG.officialWordUrl,
+                    desc: "النموذج الرسمي المعتمد لمدرسة الثروات الوطنية الخاصة"
+                }
+            ]);
+            State.settings = LocalStore.get("settings", State.settings);
+            UI.updateSidebarBadges();
+        }
+    };
+
+    const Dashboard = {
+        render() {
+            const yr = State.selectedYear;
+            const studentsInYear = State.students.filter(s => s.academicYear === yr);
+            const activeCount = studentsInYear.filter(s => s.status === 'ACTIVE').length;
+            const reportsInYear = State.reports.filter(r => r.academicYear === yr);
+
+            const totalFees = reportsInYear.reduce((sum, r) => sum + (Number(r.approvedFees) || 0), 0);
+            const totalPaid = reportsInYear.reduce((sum, r) => sum + (Number(r.paid) || 0), 0);
+            const totalRemaining = reportsInYear.reduce((sum, r) => sum + (Number(r.remaining) || 0), 0);
+
+            const sElem = document.getElementById('dash-total-students');
+            if (sElem) sElem.innerText = studentsInYear.length.toLocaleString();
+            const aElem = document.getElementById('dash-active-students');
+            if (aElem) aElem.innerText = activeCount.toLocaleString();
+            const fElem = document.getElementById('dash-total-fees');
+            if (fElem) fElem.innerText = totalFees.toLocaleString(undefined, {minimumFractionDigits: 2});
+            const pElem = document.getElementById('dash-total-paid');
+            if (pElem) pElem.innerText = totalPaid.toLocaleString(undefined, {minimumFractionDigits: 2});
+            const bElem = document.getElementById('dash-total-balance');
+            if (bElem) bElem.innerText = totalRemaining.toLocaleString(undefined, {minimumFractionDigits: 2});
+            const rElem = document.getElementById('dash-total-reports');
+            if (rElem) rElem.innerText = reportsInYear.length;
+
+            const collectionRate = totalFees > 0 ? ((totalPaid / totalFees) * 100).toFixed(1) : 0;
+            const cElem = document.getElementById('dash-paid-percent');
+            if (cElem) cElem.innerText = `${collectionRate}%`;
+        }
+    };
+
+    const Fees = {
+        render() {
+            const yFilter = document.getElementById('fee-table-year-filter');
+            const year = (yFilter && yFilter.value) ? yFilter.value : State.selectedYear;
+            const tbody = document.getElementById('fees-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            GRADES.forEach(g => {
+                let rec = State.feeBenchmarks.find(f => f.year === year && f.gradeCode === g.code);
+                if (!rec) {
+                    rec = { year, gradeCode: g.code, tuition: 0, books: 0, transport: 0, uniform: 0, total: 0 };
+                }
+                const total = (Number(rec.tuition)||0) + (Number(rec.books)||0) + (Number(rec.transport)||0) + (Number(rec.uniform)||0);
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-bold text-brand-600">${g.code} - ${g.nameAr}</td>
+                    <td class="py-3 px-4 text-end font-mono">${(Number(rec.tuition)||0).toLocaleString()} AED</td>
+                    <td class="py-3 px-4 text-end font-mono">${(Number(rec.books)||0).toLocaleString()} AED</td>
+                    <td class="py-3 px-4 text-end font-mono">${(Number(rec.transport)||0).toLocaleString()} AED</td>
+                    <td class="py-3 px-4 text-end font-mono">${(Number(rec.uniform)||0).toLocaleString()} AED</td>
+                    <td class="py-3 px-4 text-end font-mono font-black text-brand-700 dark:text-brand-400">${total.toLocaleString()} AED</td>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="Fees.openModal('${year}', '${g.code}')" class="px-3 py-1.5 bg-brand-50 dark:bg-slate-800 hover:bg-brand-100 text-brand-700 dark:text-brand-300 font-bold text-xs rounded-lg transition">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> تعديل الرسوم
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        },
+        openModal(year, gradeCode) {
+            let rec = State.feeBenchmarks.find(f => f.year === year && f.gradeCode === gradeCode);
+            if (!rec) rec = { tuition: 0, books: 0, transport: 0, uniform: 0 };
+
+            document.getElementById('fee-modal-title').innerText = `هيكل رسوم الصف (${gradeCode}) - للعام (${year})`;
+            document.getElementById('fee-m-year').value = year;
+            document.getElementById('fee-m-grade').value = gradeCode;
+            document.getElementById('fee-m-tuition').value = rec.tuition || 0;
+            document.getElementById('fee-m-books').value = rec.books || 0;
+            document.getElementById('fee-m-transport').value = rec.transport || 0;
+            document.getElementById('fee-m-uniform').value = rec.uniform || 0;
+            document.getElementById('fee-edit-modal').classList.remove('hidden');
+        },
+        closeModal() { document.getElementById('fee-edit-modal').classList.add('hidden'); },
+        async saveBenchmark(e) {
+            e.preventDefault();
+            const year = document.getElementById('fee-m-year').value;
+            const gradeCode = document.getElementById('fee-m-grade').value;
+            const tuition = parseFloat(document.getElementById('fee-m-tuition').value) || 0;
+            const books = parseFloat(document.getElementById('fee-m-books').value) || 0;
+            const transport = parseFloat(document.getElementById('fee-m-transport').value) || 0;
+            const uniform = parseFloat(document.getElementById('fee-m-uniform').value) || 0;
+            const total = tuition + books + transport + uniform;
+
+            const docId = `FEE_${year}_${gradeCode}`;
+            const feeObj = { id: docId, year, gradeCode, tuition, books, transport, uniform, total };
+
+            const idx = State.feeBenchmarks.findIndex(f => f.year === year && f.gradeCode === gradeCode);
+            if (idx !== -1) State.feeBenchmarks[idx] = feeObj;
+            else State.feeBenchmarks.push(feeObj);
+
+            await FirebaseSync.saveDoc("feeBenchmarks", docId, feeObj);
+            this.closeModal();
+            UI.showToast(`تم حفظ هيكل رسوم الصف (${gradeCode}) بنجاح`, "success");
+            this.render();
+        }
+    };
+
+    // ==========================================================
+    // STUDENTS MODULE (FIXED, ROBUST & ADVANCED)
+    // ==========================================================
+    const Students = {
+        render() {
+            const tbody = document.getElementById('students-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const q = (State.studentFilter.search || "").toLowerCase().trim();
+            
+            const filtered = State.students.filter(s => {
+                const matchQuery = !q ||
+                    (s.studentId && s.studentId.toLowerCase().includes(q)) ||
+                    (s.nameAr && s.nameAr.toLowerCase().includes(q)) ||
+                    (s.nameEn && s.nameEn.toLowerCase().includes(q)) ||
+                    (s.emiratesId && s.emiratesId.includes(q));
+                const matchGrade = State.studentFilter.grade === 'ALL' || s.grade === State.studentFilter.grade;
+                const matchYear = State.studentFilter.year === 'ALL' || s.academicYear === State.studentFilter.year;
+                const matchStatus = State.studentFilter.status === 'ALL' || s.status === State.studentFilter.status;
+                return matchQuery && matchGrade && matchYear && matchStatus;
+            });
+
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 font-bold">لا توجد بيانات طلاب مطابقة</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-bold text-brand-600">${s.studentId}</td>
+                    <td class="py-3 px-4">
+                        <span class="font-bold text-slate-900 dark:text-white block">${s.nameAr}</span>
+                        <span class="text-[10px] text-slate-400 block">${s.nameEn || ''}</span>
+                    </td>
+                    <td class="py-3 px-4 font-bold">${s.grade}</td>
+                    <td class="py-3 px-4 font-mono text-slate-500">${s.emiratesId}</td>
+                    <td class="py-3 px-4 font-mono text-slate-500">${s.birthDate || '-'}</td>
+                    <td class="py-3 px-4 text-center font-mono text-xs">${s.academicYear}</td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="Reports.startForStudent('${s.id}')" title="إصدار تقرير ADEK" class="p-1.5 text-brand-600 hover:bg-brand-50 rounded-lg">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                            </button>
+                            <button onclick="Students.openModal('${s.id}')" title="تعديل" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="Students.delete('${s.id}')" title="حذف" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        },
+
+        handleSearch(val) { State.studentFilter.search = val; this.render(); },
+        
+        applyFilters() {
+            const fg = document.getElementById('filter-grade');
+            const fy = document.getElementById('filter-year');
+            const fs = document.getElementById('filter-status');
+            State.studentFilter.grade = fg ? fg.value : 'ALL';
+            State.studentFilter.year = fy ? fy.value : 'ALL';
+            State.studentFilter.status = fs ? fs.value : 'ALL';
+            this.render();
+        },
+
+        formatEmiratesId(input) {
+            let v = input.value.replace(/\D/g, '');
+            if (v.length > 15) v = v.substring(0, 15);
+            let formatted = '';
+            if (v.length > 0) formatted += v.substring(0, 3);
+            if (v.length > 3) formatted += '-' + v.substring(3, 7);
+            if (v.length > 7) formatted += '-' + v.substring(7, 14);
+            if (v.length > 14) formatted += '-' + v.substring(14, 15);
+            input.value = formatted;
+        },
+
+        openModal(editId = null, fromReport = false) {
+            State.openedFromReportView = fromReport;
+            const form = document.querySelector('#student-modal form');
+            if (form) form.reset();
+
+            const gradeSelect = document.getElementById('m-stu-grade');
+            if (gradeSelect) {
+                gradeSelect.innerHTML = '';
+                GRADES.forEach(g => gradeSelect.innerHTML += `<option value="${g.code}">${g.code} - ${g.nameAr}</option>`);
+            }
+
+            const yearSelect = document.getElementById('m-stu-year');
+            if (yearSelect) {
+                yearSelect.innerHTML = '';
+                ACADEMIC_YEARS.forEach(y => yearSelect.innerHTML += `<option value="${y}" ${y === State.selectedYear ? 'selected' : ''}>${y}</option>`);
+            }
+
+            if (editId) {
+                const s = State.students.find(x => x.id === editId);
+                if (s) {
+                    document.getElementById('student-modal-title').innerText = "تعديل بيانات الطالب";
+                    document.getElementById('m-stu-edit-id').value = s.id;
+                    document.getElementById('m-stu-id').value = s.studentId;
+                    document.getElementById('m-stu-grade').value = s.grade;
+                    document.getElementById('m-stu-name-ar').value = s.nameAr;
+                    document.getElementById('m-stu-name-en').value = s.nameEn || '';
+                    document.getElementById('m-stu-eid').value = s.emiratesId;
+                    document.getElementById('m-stu-dob').value = s.birthDate || "";
+                    document.getElementById('m-stu-year').value = s.academicYear;
+                    document.getElementById('m-stu-status').value = s.status || "ACTIVE";
+                }
+            } else {
+                document.getElementById('student-modal-title').innerText = "إضافة طالب جديد";
+                document.getElementById('m-stu-edit-id').value = "";
+                // Suggest auto serial eSIS ID (9254 + next 4-digit number)
+                const nextNum = String(State.students.length + 1).padStart(4, '0');
+                document.getElementById('m-stu-id').value = `9254${nextNum}`;
+            }
+
+            document.getElementById('student-modal').classList.remove('hidden');
+        },
+
+        closeModal() {
+            document.getElementById('student-modal').classList.add('hidden');
+            State.openedFromReportView = false;
+        },
+
+        async handleSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('m-stu-edit-id').value.trim();
+            const studentId = document.getElementById('m-stu-id').value.trim();
+            const grade = document.getElementById('m-stu-grade').value;
+            const nameAr = document.getElementById('m-stu-name-ar').value.trim();
+            const nameEn = document.getElementById('m-stu-name-en').value.trim() || nameAr;
+            const emiratesId = document.getElementById('m-stu-eid').value.trim();
+            const birthDate = document.getElementById('m-stu-dob').value;
+            const academicYear = document.getElementById('m-stu-year').value;
+            const status = document.getElementById('m-stu-status').value;
+
+            if (!studentId || !nameAr || !emiratesId) {
+                UI.showToast("يرجى ملء جميع الحقول الإلزامية المطلوبة", "error");
+                return;
+            }
+
+            // Safe duplicate check
+            const dup = State.students.find(s => 
+                s.id !== editId && (
+                    (studentId && s.studentId === studentId) ||
+                    (emiratesId && s.emiratesId === emiratesId)
+                )
+            );
+
+            if (dup) {
+                UI.showToast("رقم الطالب أو الهوية مسجل لطالب آخر بالفعل!", "error");
+                return;
+            }
+
+            let savedStudent = null;
+
+            if (editId) {
+                const idx = State.students.findIndex(s => s.id === editId);
+                if (idx !== -1) {
+                    State.students[idx] = { ...State.students[idx], studentId, grade, nameAr, nameEn, emiratesId, birthDate, academicYear, status };
+                    savedStudent = State.students[idx];
+                    await FirebaseSync.saveDoc("students", editId, savedStudent);
+                    UI.showToast("تم تحديث بيانات الطالب بنجاح", "success");
+                }
+            } else {
+                const newId = "STU_" + Date.now();
+                savedStudent = { id: newId, studentId, grade, nameAr, nameEn, emiratesId, birthDate, academicYear, status };
+                State.students.unshift(savedStudent);
+                await FirebaseSync.saveDoc("students", newId, savedStudent);
+                UI.showToast("تم حفظ الطالب الجديد بنجاح", "success");
+            }
+
+            const wasOpenedFromReport = State.openedFromReportView;
+            this.closeModal();
+            this.render();
+            Dashboard.render();
+            Reports.filterStudentsSearch();
+
+            // Auto select if added directly from report creation view!
+            if (wasOpenedFromReport && savedStudent) {
+                Reports.selectStudent(savedStudent);
+            }
+        },
+
+        async delete(id) {
+            if (confirm("هل تريد بالتأكيد حذف هذا الطالب؟")) {
+                State.students = State.students.filter(s => s.id !== id);
+                await FirebaseSync.deleteDoc("students", id);
+                UI.showToast("تم حذف الطالب", "info");
+                this.render();
+                Dashboard.render();
+                Reports.filterStudentsSearch();
+            }
+        }
+    };
+
+    let importBuffer = [];
+    const Excel = {
+        openImportModal() {
+            importBuffer = [];
+            document.getElementById('import-stats').classList.add('hidden');
+            document.getElementById('import-preview-wrapper').classList.add('hidden');
+            document.getElementById('btn-confirm-import').disabled = true;
+            document.getElementById('excel-file-input').value = "";
+            document.getElementById('import-modal').classList.remove('hidden');
+        },
+        closeImportModal() { document.getElementById('import-modal').classList.add('hidden'); },
+        handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(ws, { defval: "" });
+                    this.processRows(json);
+                } catch {
+                    UI.showToast("فشل قراءة ملف Excel", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        },
+        processRows(rows) {
+            importBuffer = [];
+            let valid = 0, dup = 0;
+            const tbody = document.getElementById('import-tbody');
+            tbody.innerHTML = '';
+
+            rows.forEach((r, idx) => {
+                const studentId = String(r['Student ID'] || r['Student eSIS ID'] || r['رقم الطالب'] || '').trim();
+                const nameAr = String(r['Name AR'] || r['اسم الطالب'] || '').trim();
+                const nameEn = String(r['Name EN'] || r['Name English'] || nameAr).trim();
+                const gradeRaw = String(r['Grade'] || r['الصف'] || 'KG1').trim();
+                const emiratesId = String(r['Emirates ID'] || r['EID'] || r['الهوية'] || '').trim();
+                const birthDate = String(r['Birth Date'] || r['تاريخ الميلاد'] || '2020-01-01').trim();
+                const academicYear = String(r['Academic Year'] || r['السنة الدراسية'] || State.selectedYear).trim();
+
+                const isDup = State.students.some(s => s.studentId === studentId || (emiratesId && s.emiratesId === emiratesId));
+                if (!studentId || !nameAr) return;
+
+                if (isDup) dup++;
+                else {
+                    valid++;
+                    importBuffer.push({ id: "STU_" + Date.now() + "_" + idx, studentId, nameAr, nameEn, grade: gradeRaw, emiratesId, birthDate, academicYear, status: "ACTIVE" });
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2">${idx + 1}</td>
+                    <td class="p-2 font-mono font-bold">${studentId}</td>
+                    <td class="p-2">${nameAr}</td>
+                    <td class="p-2">${gradeRaw}</td>
+                    <td class="p-2">${isDup ? '<span class="text-amber-600 font-bold">مكرر</span>' : '<span class="text-emerald-600 font-bold">صالح</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('imp-total').innerText = rows.length;
+            document.getElementById('imp-valid').innerText = valid;
+            document.getElementById('imp-dup').innerText = dup;
+            document.getElementById('import-stats').classList.remove('hidden');
+            document.getElementById('import-preview-wrapper').classList.remove('hidden');
+            document.getElementById('btn-confirm-import').disabled = valid === 0;
+        },
+        async confirmImport() {
+            if (!importBuffer.length) return;
+            for (const item of importBuffer) {
+                State.students.unshift(item);
+                await FirebaseSync.saveDoc("students", item.id, item);
+            }
+            this.closeImportModal();
+            UI.showToast(`تم استيراد ${importBuffer.length} طالب بنجاح`, "success");
+            Students.render();
+            Dashboard.render();
+            Reports.filterStudentsSearch();
+        },
+        exportStudents() {
+            if (!State.students.length) { UI.showToast("لا توجد بيانات للتصدير", "info"); return; }
+            const data = State.students.map(s => ({
+                "Student eSIS ID": s.studentId, "Name AR": s.nameAr, "Name EN": s.nameEn, "Grade": s.grade,
+                "Emirates ID": s.emiratesId, "Birth Date": s.birthDate, "Academic Year": s.academicYear
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Students");
+            XLSX.writeFile(wb, `Altharawat_Students_9254.xlsx`);
+            UI.showToast("تم تصدير ملف الطلاب بنجاح", "success");
+        }
+    };
+
+    // ==========================================================
+    // REPORTS LOGIC, TRANSPORT TOGGLE & ADVANCED SEARCH
+    // ==========================================================
+    const Reports = {
+        currentReport: null,
+        selectedStudentId: null,
+
+        initCreate() {
+            const dateInput = document.getElementById('rep-date');
+            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+            const accInput = document.getElementById('rep-accountant');
+            if (accInput) accInput.value = State.settings.principal || CONFIG.defaultAccountant;
+            
+            const filterGrade = document.getElementById('rep-quick-grade-filter');
+            if (filterGrade) {
+                filterGrade.innerHTML = '<option value="ALL">كل الصفوف</option>';
+                GRADES.forEach(g => {
+                    filterGrade.innerHTML += `<option value="${g.code}">${g.code}</option>`;
+                });
+            }
+
+            document.getElementById('rep-student-search-input').value = "";
+            document.getElementById('rep-selected-student-id').value = "";
+            this.selectedStudentId = null;
+            this.showSelectedStudentBanner(null);
+            this.setTransport(true);
+            this.calculate();
+
+            document.addEventListener('click', (evt) => {
+                const dd = document.getElementById('rep-student-dropdown');
+                const inp = document.getElementById('rep-student-search-input');
+                if (dd && !dd.contains(evt.target) && evt.target !== inp) {
+                    dd.classList.add('hidden');
+                }
+            });
+        },
+
+        setTransport(enable) {
+            State.hasTransport = enable;
+            const btnYes = document.getElementById('btn-transport-yes');
+            const btnNo = document.getElementById('btn-transport-no');
+
+            if (enable) {
+                btnYes.className = "px-4 py-1.5 rounded-lg text-xs font-black transition bg-brand-600 text-white shadow-xs";
+                btnNo.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700";
+            } else {
+                btnNo.className = "px-4 py-1.5 rounded-lg text-xs font-black transition bg-rose-600 text-white shadow-xs";
+                btnYes.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700";
+            }
+
+            if (this.selectedStudentId) {
+                const stu = State.students.find(s => s.id === this.selectedStudentId);
+                if (stu) this.loadBenchmarkForStudent(stu);
+            } else {
+                if (!enable) document.getElementById('fee-transport').value = 0;
+                this.calculate();
+            }
+        },
+
+        showDropdown(show = true) {
+            const dd = document.getElementById('rep-student-dropdown');
+            if (show) {
+                this.filterStudentsSearch();
+                dd.classList.remove('hidden');
+            } else {
+                dd.classList.add('hidden');
+            }
+        },
+
+        filterStudentsSearch() {
+            const inp = document.getElementById('rep-student-search-input');
+            const query = (inp ? inp.value : "").trim().toLowerCase();
+            const fg = document.getElementById('rep-quick-grade-filter');
+            const gradeFilter = fg ? fg.value : "ALL";
+            const container = document.getElementById('rep-dropdown-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const matches = State.students.filter(s => {
+                const matchGrade = (gradeFilter === "ALL" || s.grade === gradeFilter);
+                const matchText = !query || 
+                    (s.studentId && s.studentId.toLowerCase().includes(query)) ||
+                    (s.nameAr && s.nameAr.toLowerCase().includes(query)) ||
+                    (s.nameEn && s.nameEn.toLowerCase().includes(query)) ||
+                    (s.emiratesId && s.emiratesId.includes(query));
+                return matchGrade && matchText;
+            });
+
+            if (!matches.length) {
+                container.innerHTML = `
+                    <div class="p-4 text-center text-slate-400 font-bold">
+                        <i class="fa-solid fa-user-xmark text-lg mb-1 block"></i>
+                        لا توجد نتائج مطابقة للبحث
+                    </div>
+                `;
+            } else {
+                matches.slice(0, 30).forEach(s => {
+                    const row = document.createElement('div');
+                    row.className = "p-3 hover:bg-emerald-50 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between transition";
+                    row.onclick = () => {
+                        this.selectStudent(s);
+                        this.showDropdown(false);
+                    };
+                    row.innerHTML = `
+                        <div class="truncate">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900 dark:text-white">${s.nameAr}</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-brand-100 text-brand-800">${s.grade}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-mono mt-0.5">${s.studentId} | EID: ${s.emiratesId}</div>
+                        </div>
+                        <span class="text-xs text-brand-600 font-bold"><i class="fa-solid fa-check"></i> اختيار</span>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+
+            const dd = document.getElementById('rep-student-dropdown');
+            if (dd) dd.classList.remove('hidden');
+        },
+
+        selectStudent(stu) {
+            if (!stu) return;
+            this.selectedStudentId = stu.id;
+            document.getElementById('rep-selected-student-id').value = stu.id;
+            document.getElementById('rep-student-search-input').value = `${stu.nameAr} (${stu.studentId})`;
+            this.showSelectedStudentBanner(stu);
+            this.loadBenchmarkForStudent(stu);
+        },
+
+        showSelectedStudentBanner(stu) {
+            if (!stu) {
+                document.getElementById('rep-disp-id').innerText = '-';
+                document.getElementById('rep-disp-name').innerText = '-';
+                document.getElementById('rep-disp-grade').innerText = '-';
+                document.getElementById('rep-disp-eid').innerText = '-';
+                return;
+            }
+            document.getElementById('rep-disp-id').innerText = stu.studentId;
+            document.getElementById('rep-disp-name').innerText = stu.nameAr;
+            document.getElementById('rep-disp-grade').innerText = stu.grade;
+            document.getElementById('rep-disp-eid').innerText = stu.emiratesId;
+        },
+
+        startForStudent(stuId) {
+            UI.showView('create-report');
+            const stu = State.students.find(s => s.id === stuId);
+            if (stu) this.selectStudent(stu);
+        },
+
+        onYearOrStudentChange() {
+            if (this.selectedStudentId) {
+                const stu = State.students.find(s => s.id === this.selectedStudentId);
+                if (stu) this.loadBenchmarkForStudent(stu);
+            }
+        },
+
+        loadBenchmarkForStudent(stu) {
+            const year = document.getElementById('rep-year').value;
+            const benchmark = State.feeBenchmarks.find(f => f.year === year && f.gradeCode === stu.grade);
+
+            if (benchmark) {
+                document.getElementById('fee-tuition').value = benchmark.tuition || 0;
+                document.getElementById('fee-books').value = benchmark.books || 0;
+                document.getElementById('fee-transport').value = State.hasTransport ? (benchmark.transport || 0) : 0;
+                document.getElementById('fee-uniform').value = benchmark.uniform || 0;
+            } else {
+                document.getElementById('fee-tuition').value = 0;
+                document.getElementById('fee-books').value = 0;
+                document.getElementById('fee-transport').value = 0;
+                document.getElementById('fee-uniform').value = 0;
+            }
+            this.calculate();
+        },
+
+        calculate(updateActual = true) {
+            const tuition   = parseFloat(document.getElementById('fee-tuition').value) || 0;
+            const books     = parseFloat(document.getElementById('fee-books').value) || 0;
+            const transport = parseFloat(document.getElementById('fee-transport').value) || 0;
+            const uniform   = parseFloat(document.getElementById('fee-uniform').value) || 0;
+            const approvedTotal = tuition + books + transport + uniform;
+
+            document.getElementById('fee-approved-total').value = approvedTotal.toFixed(2);
+            document.getElementById('fee-stat-approved').value = approvedTotal.toFixed(2);
+
+            if (updateActual) {
+                document.getElementById('fee-actual').value = approvedTotal.toFixed(2);
+            }
+
+            const actualFees = parseFloat(document.getElementById('fee-actual').value) || 0;
+            const paid = parseFloat(document.getElementById('fee-paid').value) || 0;
+            const remaining = Math.max(0, actualFees - paid);
+
+            document.getElementById('fee-remaining').value = remaining.toFixed(2);
+        },
+
+        async saveReport(e) {
+            e.preventDefault();
+            const stuId = this.selectedStudentId;
+            const stu = State.students.find(s => s.id === stuId);
+            if (!stu) { UI.showToast("يرجى اختيار طالب أولاً من قائمة البحث!", "error"); return; }
+
+            const year = document.getElementById('rep-year').value;
+            const prefix = year.split('-')[0];
+            const countInYear = State.reports.filter(r => r.academicYear === year).length;
+            const repNumber = `THAR-9254-${prefix}-${String(countInYear + 1).padStart(4, '0')}`;
+
+            const tuition = parseFloat(document.getElementById('fee-tuition').value) || 0;
+            const books = parseFloat(document.getElementById('fee-books').value) || 0;
+            const transport = parseFloat(document.getElementById('fee-transport').value) || 0;
+            const uniform = parseFloat(document.getElementById('fee-uniform').value) || 0;
+            const approvedFees = tuition + books + transport + uniform;
+            const paid = parseFloat(document.getElementById('fee-paid').value) || 0;
+            const actualFees = parseFloat(document.getElementById('fee-actual').value) || approvedFees;
+            const remaining = Math.max(0, actualFees - paid);
+
+            const report = {
+                reportNumber: repNumber,
+                academicYear: year,
+                studentId: stu.id,
+                studentCode: stu.studentId,
+                nameAr: stu.nameAr,
+                nameEn: stu.nameEn || stu.nameAr,
+                grade: stu.grade,
+                emiratesId: stu.emiratesId,
+                birthDate: stu.birthDate || "",
+                tuitionFee: tuition,
+                booksFee: books,
+                transportFee: transport,
+                uniformFee: uniform,
+                approvedFees: approvedFees,
+                paid: paid,
+                actualFees: actualFees,
+                remaining: remaining,
+                accountant: document.getElementById('rep-accountant').value.trim() || CONFIG.defaultAccountant,
+                reportDate: document.getElementById('rep-date').value
+            };
+
+            State.reports.unshift(report);
+            await FirebaseSync.saveDoc("reports", repNumber, report);
+            UI.showToast(`تم إصدار التقرير المعتمد (${repNumber}) بنجاح`, "success");
+            this.openPreview(report);
+            Dashboard.render();
+            this.renderHistory();
+        },
+
+        renderHistory(filterText = "") {
+            const tbody = document.getElementById('reports-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const q = (filterText || "").toLowerCase().trim();
+            const filtered = State.reports.filter(r => !q || r.reportNumber.toLowerCase().includes(q) || r.nameAr.toLowerCase().includes(q));
+
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-bold">لا توجد تقارير في الأرشيف</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-bold text-brand-600">${r.reportNumber}</td>
+                    <td class="py-3 px-4 font-bold">${r.nameAr}</td>
+                    <td class="py-3 px-4 text-center font-bold">${r.grade}</td>
+                    <td class="py-3 px-4 text-center font-mono text-xs">${r.academicYear}</td>
+                    <td class="py-3 px-4 text-end font-mono font-bold">${Number(r.approvedFees).toFixed(2)}</td>
+                    <td class="py-3 px-4 text-end font-mono font-bold text-emerald-600">${Number(r.paid).toFixed(2)}</td>
+                    <td class="py-3 px-4 text-end font-mono font-black ${r.remaining > 0 ? 'text-rose-600' : 'text-slate-400'}">${Number(r.remaining).toFixed(2)}</td>
+                    <td class="py-3 px-4 text-center font-bold text-xs">${r.accountant}</td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="Reports.viewByRef('${r.reportNumber}')" title="معاينة وطباعة" class="p-1.5 text-brand-600 hover:bg-brand-50 rounded-lg">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button onclick="Reports.delete('${r.reportNumber}')" title="حذف" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        },
+
+        filterHistory(val) { this.renderHistory(val); },
+        viewByRef(ref) {
+            const r = State.reports.find(x => x.reportNumber === ref);
+            if (r) this.openPreview(r);
+        },
+
+        openPreview(report) {
+            this.currentReport = report;
+
+            document.getElementById('a4-adek-logo-img').src = State.settings.adekLogo || CONFIG.defaultAdekLogo;
+            document.getElementById('a4-tns-logo-img').src = State.settings.tnsLogo || CONFIG.defaultTnsLogo;
+
+            document.getElementById('a4-stu-name-ar').innerText = report.nameAr;
+            document.getElementById('a4-stu-name-en').innerText = report.nameEn || report.nameAr;
+            document.getElementById('a4-stu-eid').innerText = report.emiratesId;
+            document.getElementById('a4-stu-eid-ar').innerText = report.emiratesId;
+            document.getElementById('a4-stu-dob').innerText = report.birthDate || "-";
+            document.getElementById('a4-stu-dob-ar').innerText = report.birthDate || "-";
+            document.getElementById('a4-stu-id').innerText = report.studentCode;
+            document.getElementById('a4-stu-id-ar').innerText = report.studentCode;
+            document.getElementById('a4-stu-grade-en').innerText = `${report.grade} / ${report.academicYear.replace('-', '/')}`;
+            document.getElementById('a4-stu-grade-ar').innerText = `${report.grade} / ${report.academicYear.replace('-', '/')}`;
+
+            const yearSlash = report.academicYear.replace('-', '/');
+            document.getElementById('a4-rep-year-ar').innerText = yearSlash;
+            document.getElementById('a4-rep-year-en').innerText = yearSlash;
+            document.getElementById('a4-rep-grade-title').innerText = report.grade;
+            document.getElementById('a4-rep-grade-en').innerText = report.grade;
+
+            // Table 1 (LTR: Grade/Year on Left -> Total on Right)
+            document.getElementById('a4-tbl-grade-year').innerText = `${report.grade} / ${yearSlash}`;
+            document.getElementById('a4-tbl-tuition').innerText = Number(report.tuitionFee).toFixed(2);
+            document.getElementById('a4-tbl-books').innerText = Number(report.booksFee).toFixed(2);
+            document.getElementById('a4-tbl-transport').innerText = Number(report.transportFee).toFixed(2);
+            document.getElementById('a4-tbl-uniform').innerText = Number(report.uniformFee).toFixed(2);
+            document.getElementById('a4-tbl-total').innerText = Number(report.approvedFees).toFixed(2);
+
+            // Table 2 (LTR: Approved Fees on Left -> Remaining on Right)
+            document.getElementById('a4-stat-approved').innerText = Number(report.approvedFees).toFixed(2);
+            document.getElementById('a4-stat-paid').innerText = Number(report.paid).toFixed(2);
+            document.getElementById('a4-stat-actual').innerText = Number(report.actualFees).toFixed(2);
+            document.getElementById('a4-stat-remaining').innerText = Number(report.remaining).toFixed(2);
+
+            // Signatures & Date
+            document.getElementById('a4-rep-accountant').innerText = report.accountant || CONFIG.defaultAccountant;
+            document.getElementById('a4-rep-date').innerText = report.reportDate;
+
+            const wtSelect = document.getElementById('report-modal-word-selector');
+            if (wtSelect) {
+                wtSelect.innerHTML = '';
+                State.wordTemplates.forEach(t => wtSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`);
+            }
+
+            document.getElementById('report-view-modal').classList.remove('hidden');
+        },
+
+        closeModal() {
+            document.getElementById('report-view-modal').classList.add('hidden');
+            this.currentReport = null;
+        },
+
+        triggerPrint() {
+            document.getElementById('print-section').innerHTML = document.getElementById('printable-a4-sheet').outerHTML;
+            window.print();
+        },
+
+        downloadCurrentPdf() {
+            if (!this.currentReport) return;
+            UI.showToast("جارٍ إنشاء ملف PDF...", "info");
+            html2pdf().set({
+                margin: [0, 0, 0, 0],
+                filename: `ADEK_Report_${this.currentReport.studentCode}_${this.currentReport.reportNumber}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(document.getElementById('printable-a4-sheet')).save().then(() => {
+                UI.showToast("تم تنزيل ملف PDF المعتمد", "success");
+            });
+        },
+
+        async downloadSelectedWord() {
+            if (!this.currentReport) return;
+            const tId = document.getElementById('report-modal-word-selector').value;
+            const template = State.wordTemplates.find(t => t.id === tId) || State.wordTemplates[0];
+            if (!template || !template.url) { UI.showToast("يرجى تعيين رابط قالب Word صالح", "error"); return; }
+
+            UI.showToast("جارٍ تعبئة النموذج الرسمي في ملف Word...", "info");
+            try {
+                const res = await fetch(template.url);
+                if (!res.ok) throw new Error();
+                const blob = await res.blob();
+                const arrayBuffer = await blob.arrayBuffer();
+
+                const zip = new PizZip(arrayBuffer);
+                const doc = new window.docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
+                doc.render({
+                    STUDENT_NAME: this.currentReport.nameAr,
+                    STUDENT_NAME_AR: this.currentReport.nameAr,
+                    STUDENT_NAME_EN: this.currentReport.nameEn,
+                    ESIS_ID: this.currentReport.studentCode,
+                    STUDENT_ID: this.currentReport.studentCode,
+                    EMIRATES_ID: this.currentReport.emiratesId,
+                    EID: this.currentReport.emiratesId,
+                    BIRTH_DATE: this.currentReport.birthDate || "",
+                    GRADE: this.currentReport.grade,
+                    ACADEMIC_YEAR: this.currentReport.academicYear,
+                    YEAR: this.currentReport.academicYear,
+                    TUITION_FEE: Number(this.currentReport.tuitionFee).toFixed(2),
+                    BOOKS_FEE: Number(this.currentReport.booksFee).toFixed(2),
+                    TRANSPORT_FEE: Number(this.currentReport.transportFee).toFixed(2),
+                    UNIFORM_FEE: Number(this.currentReport.uniformFee).toFixed(2),
+                    TOTAL_FEES: Number(this.currentReport.approvedFees).toFixed(2),
+                    APPROVED_FEES: Number(this.currentReport.approvedFees).toFixed(2),
+                    PAID: Number(this.currentReport.paid).toFixed(2),
+                    ACTUAL_FEES: Number(this.currentReport.actualFees).toFixed(2),
+                    REMAINING: Number(this.currentReport.remaining).toFixed(2),
+                    ACCOUNTANT: this.currentReport.accountant,
+                    REPORT_DATE: this.currentReport.reportDate,
+                    DATE: this.currentReport.reportDate,
+                    SCHOOL_ID: CONFIG.schoolId,
+                    SCHOOL_NAME_AR: CONFIG.schoolNameAr,
+                    SCHOOL_NAME_EN: CONFIG.schoolNameEn
+                });
+
+                const out = doc.getZip().generate({
+                    type: "blob",
+                    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                });
+                saveAs(out, `ADEK_Report_${this.currentReport.studentCode}.docx`);
+                UI.showToast("تم تنزيل ملف Word بنجاح", "success");
+            } catch {
+                UI.showToast("تعذر جلب ملف Word عبر الرابط بسبب قيود CORS.", "error");
+            }
+        },
+
+        async delete(ref) {
+            if (confirm(`حذف التقرير (${ref}) نهائياً؟`)) {
+                State.reports = State.reports.filter(r => r.reportNumber !== ref);
+                await FirebaseSync.deleteDoc("reports", ref);
+                UI.showToast("تم حذف التقرير", "info");
+                this.renderHistory();
+                Dashboard.render();
+            }
+        }
+    };
+
+    const WordTemplates = {
+        render() {
+            const container = document.getElementById('word-templates-list');
+            if (!container) return;
+            container.innerHTML = '';
+            State.wordTemplates.forEach(t => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center text-sm">
+                                <i class="fa-solid fa-file-word"></i>
+                            </span>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">معتمد ADEK</span>
+                        </div>
+                        <h4 class="font-black text-xs text-slate-900 dark:text-white">${t.name}</h4>
+                        <p class="text-[10px] font-mono text-slate-400 break-all mt-2 bg-white dark:bg-slate-800 p-1.5 rounded border border-slate-200 dark:border-slate-700">${t.url}</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 mt-3 border-t border-slate-200 dark:border-slate-700 text-xs">
+                        <a href="${t.url}" target="_blank" class="text-blue-600 font-bold text-[11px]">تنزيل القالب</a>
+                        ${t.id !== 'default_adek_template' ? `<button onclick="WordTemplates.delete('${t.id}')" class="text-rose-600 font-bold text-[11px]">حذف</button>` : '<span class="text-slate-400 text-[10px]">أساسي</span>'}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        },
+        openModal() {
+            document.getElementById('wt-id').value = "";
+            document.getElementById('wt-name').value = "";
+            document.getElementById('wt-url').value = "";
+            document.getElementById('word-template-modal').classList.remove('hidden');
+        },
+        closeModal() { document.getElementById('word-template-modal').classList.add('hidden'); },
+        async save(e) {
+            e.preventDefault();
+            const id = "WT_" + Date.now();
+            const name = document.getElementById('wt-name').value.trim();
+            const url = document.getElementById('wt-url').value.trim();
+            const newT = { id, name, url };
+            State.wordTemplates.push(newT);
+            await FirebaseSync.saveDoc("wordTemplates", id, newT);
+            this.closeModal();
+            this.render();
+            UI.showToast("تم حفظ قالب Word بنجاح", "success");
+        },
+        async delete(id) {
+            if (confirm("حذف هذا القالب؟")) {
+                State.wordTemplates = State.wordTemplates.filter(t => t.id !== id);
+                await FirebaseSync.deleteDoc("wordTemplates", id);
+                UI.showToast("تم حذف القالب", "info");
+                this.render();
+            }
+        }
+    };
+
+    const Settings = {
+        save(e) {
+            e.preventDefault();
+            State.settings.schoolNameAr = document.getElementById('set-school-name-ar').value.trim();
+            State.settings.schoolNameEn = document.getElementById('set-school-name-en').value.trim();
+            State.settings.schoolId = document.getElementById('set-school-id').value.trim();
+            State.settings.principal = document.getElementById('set-principal').value.trim();
+
+            LocalStore.set("settings", State.settings);
+            UI.showToast("تم حفظ الإعدادات بنجاح", "success");
+        }
+    };
+
+    const UI = {
+        views: ['dashboard', 'create-report', 'students', 'fees', 'reports-history', 'word-templates', 'settings'],
+        showView(viewName) {
+            this.views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(`view-${viewName}`);
+            if (target) target.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                const n = btn.getAttribute('data-nav');
+                if (n === viewName) {
+                    btn.classList.add('active', 'bg-brand-50', 'text-brand-700', 'dark:bg-brand-950/60', 'dark:text-brand-400');
+                    btn.classList.remove('text-slate-600', 'dark:text-slate-400');
+                } else {
+                    btn.classList.remove('active', 'bg-brand-50', 'text-brand-700', 'dark:bg-brand-950/60', 'dark:text-brand-400');
+                    btn.classList.add('text-slate-600', 'dark:text-slate-400');
+                }
+            });
+
+            if (viewName === 'dashboard') Dashboard.render();
+            if (viewName === 'students') Students.render();
+            if (viewName === 'create-report') Reports.initCreate();
+            if (viewName === 'reports-history') Reports.renderHistory();
+            if (viewName === 'fees') Fees.render();
+            if (viewName === 'word-templates') WordTemplates.render();
+            if (viewName === 'settings') {
+                const a = document.getElementById('set-school-name-ar');
+                if (a) a.value = State.settings.schoolNameAr;
+                const b = document.getElementById('set-school-name-en');
+                if (b) b.value = State.settings.schoolNameEn;
+                const c = document.getElementById('set-school-id');
+                if (c) c.value = State.settings.schoolId;
+                const d = document.getElementById('set-principal');
+                if (d) d.value = State.settings.principal;
+            }
+
+            this.toggleSidebar(false);
+        },
+        toggleSidebar(forceState) {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            const isOpen = !sidebar.classList.contains('translate-x-full');
+            const shouldOpen = forceState !== undefined ? forceState : !isOpen;
+
+            if (shouldOpen) {
+                sidebar.classList.remove('translate-x-full');
+                backdrop.classList.remove('pointer-events-none');
+                backdrop.classList.add('opacity-100');
+            } else {
+                sidebar.classList.add('translate-x-full');
+                backdrop.classList.remove('opacity-100');
+                backdrop.classList.add('pointer-events-none');
+            }
+        },
+        toggleDesktopSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const icon = document.getElementById('collapse-icon');
+            State.isDesktopCollapsed = !State.isDesktopCollapsed;
+
+            if (State.isDesktopCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                icon.className = 'fa-solid fa-angles-left text-xs';
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+                icon.className = 'fa-solid fa-angles-right text-xs';
+            }
+        },
+        updateSidebarBadges() {
+            const stuBadge = document.getElementById('badge-students-count');
+            const repBadge = document.getElementById('badge-reports-count');
+            const wtBadge = document.getElementById('badge-templates-count');
+
+            if (stuBadge) stuBadge.innerText = State.students.length;
+            if (repBadge) repBadge.innerText = State.reports.length;
+            if (wtBadge) wtBadge.innerText = State.wordTemplates.length;
+        },
+        showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-600 text-white shadow-emerald-600/30',
+                error: 'bg-rose-600 text-white shadow-rose-600/30',
+                info: 'bg-slate-900 text-white shadow-slate-900/30'
+            };
+            toast.className = `p-3.5 rounded-xl text-xs font-bold shadow-xl transition-all duration-300 pointer-events-auto ${colors[type] || colors.info}`;
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+    };
+
+    const Theme = {
+        init() {
+            const saved = LocalStore.get("theme", "light");
+            if (saved === 'dark') document.documentElement.classList.add('dark');
+        },
+        toggle() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            LocalStore.set("theme", isDark ? 'dark' : 'light');
+            Dashboard.render();
+        }
+    };
+
+    const Events = {
+        changeGlobalYear(year) {
+            State.selectedYear = year;
+            LocalStore.set("global_year", year);
+            const fy = document.getElementById('fee-table-year-filter');
+            if (fy) fy.value = year;
+            const ry = document.getElementById('rep-year');
+            if (ry) ry.value = year;
+            Dashboard.render();
+            Students.render();
+            Fees.render();
+            Reports.onYearOrStudentChange();
+            UI.showToast(`العام الأكاديمي المختار: ${year}`, "info");
+        }
+    };
+
+    const App = {
+        init() {
+            Theme.init();
+            this.populateDropdowns();
+            FirebaseSync.init();
+            UI.updateSidebarBadges();
+            UI.showView('create-report');
+        },
+        populateDropdowns() {
+            const globalSel = document.getElementById('global-academic-year');
+            const feeYearSel = document.getElementById('fee-table-year-filter');
+            const repYearSel = document.getElementById('rep-year');
+            const filterYearSel = document.getElementById('filter-year');
+            const filterGradeSel = document.getElementById('filter-grade');
+
+            if (globalSel) globalSel.innerHTML = '';
+            if (feeYearSel) feeYearSel.innerHTML = '';
+            if (repYearSel) repYearSel.innerHTML = '';
+            if (filterYearSel) filterYearSel.innerHTML = '<option value="ALL">جميع السنوات</option>';
+            if (filterGradeSel) filterGradeSel.innerHTML = '<option value="ALL">جميع الصفوف</option>';
+
+            ACADEMIC_YEARS.forEach(y => {
+                if (globalSel) globalSel.innerHTML += `<option value="${y}">${y}</option>`;
+                if (feeYearSel) feeYearSel.innerHTML += `<option value="${y}">${y}</option>`;
+                if (repYearSel) repYearSel.innerHTML += `<option value="${y}">${y}</option>`;
+                if (filterYearSel) filterYearSel.innerHTML += `<option value="${y}">${y}</option>`;
+            });
+
+            GRADES.forEach(g => {
+                if (filterGradeSel) filterGradeSel.innerHTML += `<option value="${g.code}">${g.code} - ${g.nameAr}</option>`;
+            });
+        },
+        refreshCurrentView() {
+            Dashboard.render();
+            Students.render();
+            Fees.render();
+            Reports.renderHistory();
+            WordTemplates.render();
+            UI.updateSidebarBadges();
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
