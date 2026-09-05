@@ -491,7 +491,7 @@
                             </div>
                         </div>
 
-                        <!-- Fixed Filters Grid -->
+                        <!-- Filters Grid -->
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                             <div>
                                 <label class="block text-[10px] font-black text-slate-400 mb-1 uppercase">تصفية حسب الصف</label>
@@ -614,10 +614,14 @@
                     </div>
                 </section>
 
-                <!-- 7. SETTINGS & LOGOS -->
+                <!-- 7. SETTINGS & LOGOS (CENTRAL LOGO CONTROLLER) -->
                 <section id="view-settings" class="space-y-4 sm:space-y-6 hidden">
-                    <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-                        <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">بيانات الاعتماد وإعدادات المدرسة</h3>
+                    <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+                        <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-black text-slate-900 dark:text-white">بيانات المدرسة وإعدادات الشعارات الرسمية</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">ضع روابط الشعارات هنا واضغط حفظ، وسيتم عرضها فوراً في التقرير والطباعة وملف الـ PDF.</p>
+                        </div>
+
                         <form onsubmit="Settings.save(event)" class="space-y-4 text-xs">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -636,17 +640,39 @@
                                     <label class="block font-bold mb-1">المحاسب/ة المعتمد/ة</label>
                                     <input type="text" id="set-principal" value="فوز الوجيه" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none">
                                 </div>
-                                <div>
-                                    <label class="block font-bold mb-1">رابط لوجو مدرسة الثروات (TNS Logo)</label>
-                                    <input type="url" id="set-tns-logo" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono outline-none">
+
+                                <!-- TNS Logo Control with Preview -->
+                                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                    <label class="block font-bold text-slate-800 dark:text-white">
+                                        <i class="fa-solid fa-image text-brand-600 me-1"></i>
+                                        رابط لوجو مدرسة الثروات (TNS Logo URL)
+                                    </label>
+                                    <input type="url" id="set-tns-logo" oninput="Settings.previewLogos()" placeholder="https://..." class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono outline-none">
+                                    <div class="flex items-center gap-2 pt-1">
+                                        <span class="text-[10px] text-slate-400">معاينة الشعار:</span>
+                                        <img id="preview-tns-img" src="" alt="TNS Preview" class="h-10 w-24 object-contain bg-white rounded border border-slate-200 p-0.5">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block font-bold mb-1">رابط لوجو دائرة التعليم والمعرفة (ADEK Logo)</label>
-                                    <input type="url" id="set-adek-logo" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono outline-none">
+
+                                <!-- ADEK Logo Control with Preview -->
+                                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                    <label class="block font-bold text-slate-800 dark:text-white">
+                                        <i class="fa-solid fa-landmark text-rose-600 me-1"></i>
+                                        رابط لوجو دائرة التعليم والمعرفة (ADEK Logo URL)
+                                    </label>
+                                    <input type="url" id="set-adek-logo" oninput="Settings.previewLogos()" placeholder="https://..." class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono outline-none">
+                                    <div class="flex items-center gap-2 pt-1">
+                                        <span class="text-[10px] text-slate-400">معاينة الشعار:</span>
+                                        <img id="preview-adek-img" src="" alt="ADEK Preview" class="h-10 w-24 object-contain bg-white rounded border border-slate-200 p-0.5">
+                                    </div>
                                 </div>
                             </div>
+
                             <div class="flex justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
-                                <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl shadow-sm transition">حفظ التغييرات والشعارات</button>
+                                <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl shadow transition flex items-center gap-2">
+                                    <i class="fa-solid fa-floppy-disk"></i>
+                                    <span>حفظ التغييرات والشعارات وتطبيقها</span>
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -656,9 +682,7 @@
         </div>
     </div>
 
-    <!-- ========================================================================= -->
-    <!-- MODAL: ADD / EDIT STUDENT (IMPROVED & ERROR FREE)                         -->
-    <!-- ========================================================================= -->
+    <!-- MODAL: ADD / EDIT STUDENT -->
     <div id="student-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-4 hidden">
         <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
             <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
@@ -870,13 +894,13 @@
                     
                     <!-- TOP CONTENT -->
                     <div>
-                        <!-- TOP HEADER LOGOS -->
+                        <!-- TOP HEADER LOGOS (CONTROLLED DIRECTLY FROM SETTINGS) -->
                         <div class="flex justify-between items-start pb-1 mb-2">
                             
                             <!-- SCHOOL LOGO (LEFT): مدرسة الثروات الوطنية -->
                             <div class="w-32 sm:w-36 text-left">
                                 <img id="a4-tns-logo-img" 
-                                     src="https://videotourl.com/images/1788614940875-c5ddf863-9643-4631-a2af-6daeb43e6cf3.png" 
+                                     src="" 
                                      onerror="this.src='https://placehold.co/150x80/png?text=TNS+School'"
                                      crossorigin="anonymous"
                                      alt="Altharawat National School Logo" 
@@ -886,7 +910,7 @@
                             <!-- ADEK LOGO (RIGHT): دائرة التعليم والمعرفة -->
                             <div class="w-40 sm:w-48 text-right">
                                 <img id="a4-adek-logo-img" 
-                                     src="https://videotourl.com/images/1788614906899-70f52465-070b-40d3-95cf-e8779c1fc2f7.png" 
+                                     src="" 
                                      onerror="this.src='https://placehold.co/180x80/png?text=ADEK+Logo'"
                                      crossorigin="anonymous"
                                      alt="ADEK Department of Education and Knowledge" 
@@ -1055,7 +1079,7 @@
                             جميع المعلومات المالية و المحاسبية تمت مراجعتها و التدقيق عليها عن طريق المحاسب و تحت مسئوليته و هذا أقرار منه بذلك ....
                         </div>
 
-                        <!-- INTENTIONAL GENEROUS WHITE SPACE GAP (فراغ أبيض كبير ومريح) -->
+                        <!-- INTENTIONAL GENEROUS WHITE SPACE GAP -->
                         <div class="h-28 sm:h-36"></div>
                     </div>
 
@@ -1104,10 +1128,12 @@
         schoolId: "9254",
         defaultAccountant: "فوز الوجيه",
         currency: "AED",
-        storagePrefix: "ALTHARAWAT_APP_DATA_V8_",
+        storagePrefix: "ALTHARAWAT_APP_DATA_V9_",
         officialWordUrl: "https://www.image2url.com/r2/default/files/1788599856569-bc638f9d-1404-439f-affe-555c9dc66ee6.docx",
-        defaultAdekLogo: "https://videotourl.com/images/1788614906899-70f52465-070b-40d3-95cf-e8779c1fc2f7.png",
-        defaultTnsLogo: "https://videotourl.com/images/1788614940875-c5ddf863-9643-4631-a2af-6daeb43e6cf3.png"
+        
+        // الروابط الافتراضية الثابتة لشعارات المدرسة ودائرة التعليم والمعرفة
+        defaultTnsLogo: "https://videotourl.com/images/1788614940875-c5ddf863-9643-4631-a2af-6daeb43e6cf3.png",
+        defaultAdekLogo: "https://videotourl.com/images/1788614906899-70f52465-070b-40d3-95cf-e8779c1fc2f7.png"
     };
 
     const GRADES = [
@@ -1294,16 +1320,15 @@
                 }
             ]);
             
-            // Ensure valid logos from CONFIG
-            const loadedSettings = LocalStore.get("settings", null);
-            if (loadedSettings) {
-                State.settings = {
-                    ...State.settings,
-                    ...loadedSettings,
-                    tnsLogo: (loadedSettings.tnsLogo && loadedSettings.tnsLogo.startsWith('http')) ? loadedSettings.tnsLogo : CONFIG.defaultTnsLogo,
-                    adekLogo: (loadedSettings.adekLogo && loadedSettings.adekLogo.startsWith('http')) ? loadedSettings.adekLogo : CONFIG.defaultAdekLogo
-                };
-            }
+            // Load Settings safely and ensure custom or default logos
+            const savedSettings = LocalStore.get("settings", {});
+            State.settings = {
+                ...State.settings,
+                ...savedSettings,
+                tnsLogo: savedSettings.tnsLogo || CONFIG.defaultTnsLogo,
+                adekLogo: savedSettings.adekLogo || CONFIG.defaultAdekLogo
+            };
+            
             UI.updateSidebarBadges();
         }
     };
@@ -1996,20 +2021,16 @@
         openPreview(report) {
             this.currentReport = report;
 
-            // Use direct reliable URLs if settings are empty or invalid
+            // Load directly from State.settings saved from settings view
             const tnsImg = document.getElementById('a4-tns-logo-img');
             const adekImg = document.getElementById('a4-adek-logo-img');
 
             if (tnsImg) {
-                tnsImg.src = (State.settings.tnsLogo && State.settings.tnsLogo.startsWith('http')) 
-                    ? State.settings.tnsLogo 
-                    : CONFIG.defaultTnsLogo;
+                tnsImg.src = State.settings.tnsLogo || CONFIG.defaultTnsLogo;
             }
 
             if (adekImg) {
-                adekImg.src = (State.settings.adekLogo && State.settings.adekLogo.startsWith('http')) 
-                    ? State.settings.adekLogo 
-                    : CONFIG.defaultAdekLogo;
+                adekImg.src = State.settings.adekLogo || CONFIG.defaultAdekLogo;
             }
 
             document.getElementById('a4-stu-name-ar').innerText = report.nameAr;
@@ -2203,7 +2224,20 @@
         }
     };
 
+    // ==========================================================
+    // SETTINGS MODULE (MANAGING LOGOS & DATA CENTRALLY)
+    // ==========================================================
     const Settings = {
+        previewLogos() {
+            const tnsVal = document.getElementById('set-tns-logo').value.trim();
+            const adekVal = document.getElementById('set-adek-logo').value.trim();
+            const prevTns = document.getElementById('preview-tns-img');
+            const prevAdek = document.getElementById('preview-adek-img');
+
+            if (prevTns) prevTns.src = tnsVal || CONFIG.defaultTnsLogo;
+            if (prevAdek) prevAdek.src = adekVal || CONFIG.defaultAdekLogo;
+        },
+
         save(e) {
             e.preventDefault();
             State.settings.schoolNameAr = document.getElementById('set-school-name-ar').value.trim();
@@ -2211,13 +2245,20 @@
             State.settings.schoolId = document.getElementById('set-school-id').value.trim();
             State.settings.principal = document.getElementById('set-principal').value.trim();
 
-            const tnsInput = document.getElementById('set-tns-logo');
-            const adekInput = document.getElementById('set-adek-logo');
-            if (tnsInput && tnsInput.value.trim()) State.settings.tnsLogo = tnsInput.value.trim();
-            if (adekInput && adekInput.value.trim()) State.settings.adekLogo = adekInput.value.trim();
+            const tnsInput = document.getElementById('set-tns-logo').value.trim();
+            const adekInput = document.getElementById('set-adek-logo').value.trim();
+
+            State.settings.tnsLogo = tnsInput || CONFIG.defaultTnsLogo;
+            State.settings.adekLogo = adekInput || CONFIG.defaultAdekLogo;
+
+            // Apply immediately to the report DOM elements as well
+            const reportTns = document.getElementById('a4-tns-logo-img');
+            const reportAdek = document.getElementById('a4-adek-logo-img');
+            if (reportTns) reportTns.src = State.settings.tnsLogo;
+            if (reportAdek) reportAdek.src = State.settings.adekLogo;
 
             LocalStore.set("settings", State.settings);
-            UI.showToast("تم حفظ الإعدادات والشعارات بنجاح", "success");
+            UI.showToast("تم حفظ الإعدادات والشعارات بنجاح وتحديث التقارير فورياً", "success");
         }
     };
 
@@ -2261,6 +2302,7 @@
                 if (tnsInp) tnsInp.value = State.settings.tnsLogo || CONFIG.defaultTnsLogo;
                 const adekInp = document.getElementById('set-adek-logo');
                 if (adekInp) adekInp.value = State.settings.adekLogo || CONFIG.defaultAdekLogo;
+                Settings.previewLogos();
             }
 
             this.toggleSidebar(false);
