@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="h-full">
 <head>
@@ -35,9 +36,6 @@
     <!-- Libraries -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.6/pizzip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.47.1/docxtemplater.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <!-- Firebase SDK -->
@@ -50,61 +48,97 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
         .dark ::-webkit-scrollbar-thumb { background: #334155; }
 
-        /* Print Settings */
-        @media print {
-            body { background: white !important; color: black !important; font-size: 11pt; padding: 0 !important; margin: 0 !important; }
-            .no-print, #sidebar, #sidebar-backdrop, #topbar, #toast-container, .modal-backdrop, #app-container { display: none !important; }
-            #print-section { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            .official-sheet {
-                box-shadow: none !important;
-                border: none !important;
-                width: 100% !important;
-                min-height: 297mm !important;
-                margin: 0 !important;
-                padding: 12mm 15mm 15mm 15mm !important;
-                box-sizing: border-box !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            img {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-        }
-        @page { size: A4 portrait; margin: 0; }
-
         /* Exact A4 Sheet Styling */
         .official-sheet {
             width: 210mm;
-            min-height: 297mm;
+            height: 297mm;
+            max-height: 297mm;
             margin: auto;
-            background: white;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
             box-sizing: border-box;
             font-family: Arial, 'Cairo', sans-serif;
             color: #000;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            padding: 10mm 15mm 8mm 15mm;
+            overflow: hidden;
         }
 
         .official-table {
             width: 100%;
             border-collapse: collapse;
-            border: 2px solid #000;
+            border: 1.5px solid #000;
             text-align: center;
         }
         .official-table th, .official-table td {
-            border: 1.5px solid #000;
-            padding: 6px 3px;
+            border: 1px solid #000;
+            padding: 8px 4px;
             font-size: 11px;
+            line-height: 1.35;
+        }
+
+        /* Print Settings - STRICT SINGLE PAGE A4 */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0mm !important;
+            }
+            html, body {
+                width: 210mm !important;
+                height: 297mm !important;
+                max-height: 297mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                background: #fff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .no-print, #sidebar, #sidebar-backdrop, #topbar, #toast-container, .modal-backdrop, #app-container, #report-view-modal {
+                display: none !important;
+            }
+            #print-section {
+                display: block !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                max-height: 297mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                page-break-after: avoid !important;
+                page-break-before: avoid !important;
+                page-break-inside: avoid !important;
+            }
+            .official-sheet {
+                box-shadow: none !important;
+                border: none !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                max-height: 297mm !important;
+                margin: 0 !important;
+                padding: 10mm 15mm 8mm 15mm !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+            }
+            img {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
         }
 
         @media screen and (max-width: 850px) {
             .official-sheet {
                 width: 100% !important;
-                min-height: auto !important;
-                padding: 1.25rem !important;
+                height: auto !important;
+                max-height: none !important;
+                padding: 1rem !important;
                 box-shadow: none !important;
             }
         }
@@ -199,16 +233,8 @@
                 </div>
 
                 <div>
-                    <span class="sidebar-section-title px-3 text-[10px] font-black tracking-wider text-slate-400 uppercase block mb-1.5">القوالب والسحابة</span>
+                    <span class="sidebar-section-title px-3 text-[10px] font-black tracking-wider text-slate-400 uppercase block mb-1.5">الإعدادات والاتصال</span>
                     <div class="space-y-1">
-                        <button onclick="UI.showView('word-templates')" data-nav="word-templates" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80">
-                            <div class="flex items-center gap-3">
-                                <i class="fa-solid fa-file-word w-5 text-center text-blue-600"></i>
-                                <span class="sidebar-text">قوالب Word الرسمية</span>
-                            </div>
-                            <span id="badge-templates-count" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">1</span>
-                        </button>
-
                         <button onclick="FirebaseSync.openSettingsModal()" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80">
                             <div class="flex items-center gap-3">
                                 <i class="fa-solid fa-fire text-amber-500 text-base"></i>
@@ -325,7 +351,6 @@
                                             <span>البحث المتقدم واختيار الطالب (بالاسم، eSIS ID، أو الهوية) *</span>
                                         </label>
                                         
-                                        <!-- QUICK ADD STUDENT BUTTON DIRECTLY IN CREATE REPORT -->
                                         <button type="button" onclick="Students.openModal(null, true)" class="text-brand-600 hover:text-brand-700 text-xs font-black flex items-center gap-1">
                                             <i class="fa-solid fa-user-plus text-[11px]"></i>
                                             <span>+ إضافة طالب جديد سريعاً</span>
@@ -444,7 +469,7 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">تاريخ الاعتماد (يعتمد بتاريخ)</label>
+                                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">تاريخ الاعتماد (يتم تعيين تاريخ اليوم تلقائياً)</label>
                                     <input type="date" id="rep-date" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none">
                                 </div>
                                 <div>
@@ -597,29 +622,12 @@
                     </div>
                 </section>
 
-                <!-- 6. WORD TEMPLATES -->
-                <section id="view-word-templates" class="space-y-4 sm:space-y-6 hidden">
-                    <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
-                            <div>
-                                <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white">قوالب Microsoft Word المعتمدة (.docx)</h3>
-                                <p class="text-[11px] text-slate-400 mt-0.5">القالب المرفق مدمج ومفعل افتراضياً لتوليد التقارير بنفس تصميم المدرسة.</p>
-                            </div>
-                            <button onclick="WordTemplates.openModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-plus text-xs"></i>
-                                <span>إضافة قالب Word جديد</span>
-                            </button>
-                        </div>
-                        <div id="word-templates-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4"></div>
-                    </div>
-                </section>
-
-                <!-- 7. SETTINGS & LOGOS (CENTRAL LOGO CONTROLLER) -->
+                <!-- 6. SETTINGS & LOGOS -->
                 <section id="view-settings" class="space-y-4 sm:space-y-6 hidden">
                     <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
                         <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
                             <h3 class="text-base font-black text-slate-900 dark:text-white">بيانات المدرسة وإعدادات الشعارات الرسمية</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">ضع روابط الشعارات هنا واضغط حفظ، وسيتم عرضها فوراً في التقرير والطباعة وملف الـ PDF.</p>
+                            <p class="text-xs text-slate-400 mt-0.5">يمكنك وضع رابط مباشر للصورة أو رفعها مباشرة من جهازك. يتم الحفظ التلقائي وتظهر في التقرير والمعاينة والطباعة والـ Word والـ PDF فورياً.</p>
                         </div>
 
                         <form onsubmit="Settings.save(event)" class="space-y-4 text-xs">
@@ -641,29 +649,45 @@
                                     <input type="text" id="set-principal" value="فوز الوجيه" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none">
                                 </div>
 
-                                <!-- TNS Logo Control with Preview -->
-                                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-                                    <label class="block font-bold text-slate-800 dark:text-white">
-                                        <i class="fa-solid fa-image text-brand-600 me-1"></i>
-                                        رابط لوجو مدرسة الثروات (TNS Logo URL)
-                                    </label>
-                                    <input type="url" id="set-tns-logo" oninput="Settings.previewLogos()" placeholder="https://..." class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono outline-none">
-                                    <div class="flex items-center gap-2 pt-1">
-                                        <span class="text-[10px] text-slate-400">معاينة الشعار:</span>
-                                        <img id="preview-tns-img" src="" alt="TNS Preview" class="h-10 w-24 object-contain bg-white rounded border border-slate-200 p-0.5">
+                                <!-- TNS School Logo Box -->
+                                <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block font-bold text-slate-800 dark:text-white">
+                                            <i class="fa-solid fa-school text-brand-600 me-1"></i>
+                                            شعار مدرسة الثروات (TNS Logo)
+                                        </label>
+                                        <label class="cursor-pointer px-2.5 py-1 rounded bg-brand-50 hover:bg-brand-100 text-brand-700 text-[10px] font-bold border border-brand-200 transition">
+                                            <i class="fa-solid fa-upload me-1"></i> رفع ملف
+                                            <input type="file" accept="image/*" class="hidden" onchange="Settings.handleFileUpload(event, 'tns')">
+                                        </label>
+                                    </div>
+                                    <input type="text" id="set-tns-logo" oninput="Settings.previewLogos()" placeholder="https://..." class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-[11px] outline-none">
+                                    <div class="flex items-center gap-3 pt-1">
+                                        <span class="text-[10px] text-slate-400 font-semibold">المعاينة الحالية:</span>
+                                        <div class="h-12 w-28 bg-white rounded border border-slate-200 p-1 flex items-center justify-center">
+                                            <img id="preview-tns-img" src="" alt="TNS Preview" class="max-h-full max-w-full object-contain">
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- ADEK Logo Control with Preview -->
-                                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-                                    <label class="block font-bold text-slate-800 dark:text-white">
-                                        <i class="fa-solid fa-landmark text-rose-600 me-1"></i>
-                                        رابط لوجو دائرة التعليم والمعرفة (ADEK Logo URL)
-                                    </label>
-                                    <input type="url" id="set-adek-logo" oninput="Settings.previewLogos()" placeholder="https://..." class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono outline-none">
-                                    <div class="flex items-center gap-2 pt-1">
-                                        <span class="text-[10px] text-slate-400">معاينة الشعار:</span>
-                                        <img id="preview-adek-img" src="" alt="ADEK Preview" class="h-10 w-24 object-contain bg-white rounded border border-slate-200 p-0.5">
+                                <!-- ADEK Logo Box -->
+                                <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block font-bold text-slate-800 dark:text-white">
+                                            <i class="fa-solid fa-landmark text-rose-600 me-1"></i>
+                                            شعار دائرة التعليم والمعرفة (ADEK Logo)
+                                        </label>
+                                        <label class="cursor-pointer px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold border border-rose-200 transition">
+                                            <i class="fa-solid fa-upload me-1"></i> رفع ملف
+                                            <input type="file" accept="image/*" class="hidden" onchange="Settings.handleFileUpload(event, 'adek')">
+                                        </label>
+                                    </div>
+                                    <input type="text" id="set-adek-logo" oninput="Settings.previewLogos()" placeholder="https://..." class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-[11px] outline-none">
+                                    <div class="flex items-center gap-3 pt-1">
+                                        <span class="text-[10px] text-slate-400 font-semibold">المعاينة الحالية:</span>
+                                        <div class="h-12 w-28 bg-white rounded border border-slate-200 p-1 flex items-center justify-center">
+                                            <img id="preview-adek-img" src="" alt="ADEK Preview" class="max-h-full max-w-full object-contain">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -671,7 +695,7 @@
                             <div class="flex justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
                                 <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl shadow transition flex items-center gap-2">
                                     <i class="fa-solid fa-floppy-disk"></i>
-                                    <span>حفظ التغييرات والشعارات وتطبيقها</span>
+                                    <span>حفظ التغييرات والشعارات وتطبيقها فوراً</span>
                                 </button>
                             </div>
                         </form>
@@ -806,31 +830,6 @@
         </div>
     </div>
 
-    <!-- MODAL: ADD WORD TEMPLATE -->
-    <div id="word-template-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-4 hidden">
-        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800">
-            <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <h3 class="text-sm font-black text-slate-900 dark:text-white">إضافة قالب Word رسمي</h3>
-                <button onclick="WordTemplates.closeModal()" class="p-1 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <form onsubmit="WordTemplates.save(event)" class="p-5 space-y-3.5 text-xs">
-                <input type="hidden" id="wt-id">
-                <div>
-                    <label class="block font-bold mb-1">اسم القالب التعريفي *</label>
-                    <input type="text" id="wt-name" required placeholder="مثال: نموذج تقرير ADEK المعتمد" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">رابط ملف القالب (.docx URL) *</label>
-                    <input type="url" id="wt-url" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono outline-none">
-                </div>
-                <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <button type="button" onclick="WordTemplates.closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 font-bold rounded-xl">إلغاء</button>
-                    <button type="submit" class="px-5 py-2 bg-blue-600 text-white font-black rounded-xl shadow">حفظ القالب</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- MODAL: FIREBASE CONFIG -->
     <div id="firebase-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-3 hidden">
         <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800">
@@ -843,7 +842,7 @@
             </div>
             <div class="p-5 space-y-3 text-xs">
                 <p class="text-slate-500">الصق كائن JSON الخاص بمشروعك في Firebase للمزامنة السحابية:</p>
-                <textarea id="firebase-config-input" rows="7" placeholder='{"apiKey": "AIzaSy...", "projectId": "altharawat-school"}' class="w-full p-3 bg-slate-950 text-emerald-400 font-mono rounded-xl text-[11px] outline-none border border-slate-800"></textarea>
+                <textarea id="firebase-config-input" rows="7" placeholder='{"apiKey": "AIzaSyBHQT8VIpmTREvJqhgCIq4rZC-PIOtvHis", "projectId": "tuition-fees-44325"}' class="w-full p-3 bg-slate-950 text-emerald-400 font-mono rounded-xl text-[11px] outline-none border border-slate-800"></textarea>
             </div>
             <div class="px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2 text-xs">
                 <button onclick="FirebaseSync.closeSettingsModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 font-bold rounded-xl">إلغاء</button>
@@ -853,7 +852,7 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- MODAL: ADEK OFFICIAL A4 REPORT PREVIEW (LTR TABLES & LOWER SIGNATURES)    -->
+    <!-- MODAL: ADEK OFFICIAL A4 REPORT PREVIEW (OPTIMIZED PROPORTIONS & BALANCED) -->
     <!-- ========================================================================= -->
     <div id="report-view-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-2 sm:p-4 hidden">
         <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl h-[95vh] flex flex-col border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -866,17 +865,15 @@
                 </div>
                 
                 <div class="flex items-center gap-2 flex-wrap">
-                    <select id="report-modal-word-selector" class="px-2.5 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold outline-none max-w-[150px]"></select>
-                    
-                    <button onclick="Reports.downloadSelectedWord()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5">
+                    <button onclick="Reports.downloadNativeWord()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-xs">
                         <i class="fa-solid fa-file-word"></i>
-                        <span>تصدير Word</span>
+                        <span>حفظ كملف Word (مع الشعارات)</span>
                     </button>
-                    <button onclick="Reports.downloadCurrentPdf()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5">
+                    <button onclick="Reports.downloadCurrentPdf()" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-xs">
                         <i class="fa-solid fa-file-pdf"></i>
                         <span>حفظ PDF</span>
                     </button>
-                    <button onclick="Reports.triggerPrint()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5">
+                    <button onclick="Reports.triggerPrint()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-xs">
                         <i class="fa-solid fa-print"></i>
                         <span>طباعة فورية</span>
                     </button>
@@ -890,42 +887,37 @@
             <div class="flex-1 overflow-y-auto p-2 sm:p-6 bg-slate-300/70 dark:bg-slate-950 flex justify-center">
                 
                 <!-- START A4 OFFICIAL SHEET -->
-                <div id="printable-a4-sheet" class="official-sheet p-6 sm:p-10 relative flex flex-col justify-between" dir="ltr">
+                <div id="printable-a4-sheet" class="official-sheet relative" dir="ltr">
                     
-                    <!-- TOP CONTENT -->
+                    <!-- TOP CONTENT WRAPPER -->
                     <div>
-                        <!-- TOP HEADER LOGOS (CONTROLLED DIRECTLY FROM SETTINGS) -->
-                        <div class="flex justify-between items-start pb-1 mb-2">
-                            
+                        <!-- TOP HEADER LOGOS -->
+                        <div class="flex justify-between items-center pb-2.5 mb-1.5 border-b border-black/20">
                             <!-- SCHOOL LOGO (LEFT): مدرسة الثروات الوطنية -->
-                            <div class="w-32 sm:w-36 text-left">
+                            <div class="w-36 text-left">
                                 <img id="a4-tns-logo-img" 
                                      src="" 
-                                     onerror="this.src='https://placehold.co/150x80/png?text=TNS+School'"
-                                     crossorigin="anonymous"
                                      alt="Altharawat National School Logo" 
-                                     class="h-16 sm:h-18 object-contain mx-0 block">
+                                     class="h-16 max-w-full object-contain mx-0 block">
                             </div>
 
                             <!-- ADEK LOGO (RIGHT): دائرة التعليم والمعرفة -->
-                            <div class="w-40 sm:w-48 text-right">
+                            <div class="w-44 text-right">
                                 <img id="a4-adek-logo-img" 
                                      src="" 
-                                     onerror="this.src='https://placehold.co/180x80/png?text=ADEK+Logo'"
-                                     crossorigin="anonymous"
-                                     alt="ADEK Department of Education and Knowledge" 
-                                     class="h-16 sm:h-18 object-contain ms-auto block">
+                                     alt="ADEK Logo" 
+                                     class="h-16 max-w-full object-contain ms-auto block">
                             </div>
                         </div>
 
                         <!-- Report Center Title -->
-                        <div class="text-center my-2 pb-0.5">
-                            <h1 class="text-lg sm:text-xl font-bold text-black font-official tracking-normal">تقرير الرسوم الدراسية</h1>
-                            <h2 class="text-xs sm:text-sm font-bold text-black tracking-wider uppercase">SCHOOI FEES REPORT</h2>
+                        <div class="text-center my-2">
+                            <h1 class="text-xl font-bold text-black font-official leading-tight">تقرير الرسوم الدراسية</h1>
+                            <h2 class="text-xs font-bold text-black tracking-wider uppercase">SCHOOL FEES REPORT</h2>
                         </div>
 
                         <!-- School and Student Header Particulars (Bilingual) -->
-                        <div class="space-y-1.5 my-2.5 text-[11px] text-black">
+                        <div class="space-y-1.5 my-3 text-[11px] text-black">
                             
                             <!-- School Name -->
                             <div class="flex justify-between items-center">
@@ -989,20 +981,30 @@
                                 </div>
                             </div>
 
-                            <!-- Year / Grade -->
+                            <!-- Academic Year (STANDALONE ROW) -->
                             <div class="flex justify-between items-center">
                                 <div class="w-1/2">
-                                    <span class="font-bold">Is registered in year / Grade:</span> <span id="a4-stu-grade-en" class="ms-1 font-bold">-</span>
+                                    <span class="font-bold">Academic Year:</span> <span id="a4-stu-year-en" class="ms-1 font-bold">-</span>
                                 </div>
                                 <div class="w-1/2 text-right" dir="rtl">
-                                    <span class="font-bold">مقيدة/ بالسنه / الصف:</span> <span id="a4-stu-grade-ar" class="ms-1 font-bold">-</span>
+                                    <span class="font-bold">السنة الدراسية:</span> <span id="a4-stu-year-ar" class="ms-1 font-bold">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Grade (STANDALONE ROW) -->
+                            <div class="flex justify-between items-center">
+                                <div class="w-1/2">
+                                    <span class="font-bold">Is registered in Grade:</span> <span id="a4-stu-grade-en" class="ms-1 font-bold">-</span>
+                                </div>
+                                <div class="w-1/2 text-right" dir="rtl">
+                                    <span class="font-bold">مقيدة/ بالصف الدراسي:</span> <span id="a4-stu-grade-ar" class="ms-1 font-bold">-</span>
                                 </div>
                             </div>
 
                             <!-- Study Statement -->
                             <div class="flex justify-between items-center pt-0.5">
                                 <div class="w-1/2 font-bold">
-                                    And is currently pursing study
+                                    And is currently pursuing study
                                 </div>
                                 <div class="w-1/2 text-right font-bold" dir="rtl">
                                     وهو / هي مستمر(ة) بالدراسه حتي تاريخه
@@ -1011,20 +1013,19 @@
                         </div>
 
                         <!-- ADEK Approval Headline Text (Bilingual) -->
-                        <div class="text-center my-3 space-y-1">
-                            <p class="font-bold text-black text-[11px] sm:text-xs" dir="rtl">
+                        <div class="text-center mt-4 mb-3 space-y-1">
+                            <p class="font-bold text-black text-[11.5px]" dir="rtl">
                                 الرسوم الدراسية المعتمدة من قبل دائرة التعليم والمعرفة للعام الدراسي <span id="a4-rep-year-ar">2026/2027</span> لمدرسة الثروات الوطنية الخاصة الصف <span id="a4-rep-grade-title">KG1</span> كالآتي:
                             </p>
-                            <p class="text-[10px] sm:text-[11px] font-bold text-black">
+                            <p class="text-[10.5px] font-bold text-black">
                                 ADEK <span id="a4-rep-year-en">2026/2027</span> approved fees for (Altharawat National Private School) Grade <span id="a4-rep-grade-en">KG1</span> as below:
                             </p>
                         </div>
 
-                        <!-- ==================================================================== -->
-                        <!-- TABLE 1: FROM LEFT TO RIGHT (LTR)                                   -->
-                        <!-- Col 1 (Left): Grade/Year | Col 6 (Right): Total                      -->
-                        <!-- ==================================================================== -->
-                        <div class="my-3">
+                        <!-- ============================================================= -->
+                        <!-- TABLE 1: APPROVED FEES BREAKDOWN                             -->
+                        <!-- ============================================================= -->
+                        <div class="mt-4 mb-6">
                             <table id="a4-table-1" class="official-table" dir="ltr">
                                 <thead>
                                     <tr class="font-bold">
@@ -1038,76 +1039,81 @@
                                 </thead>
                                 <tbody>
                                     <tr class="font-bold">
-                                        <td class="py-2.5 font-bold" id="a4-tbl-grade-year">-</td>
-                                        <td class="py-2.5" id="a4-tbl-tuition">0.00</td>
-                                        <td class="py-2.5" id="a4-tbl-books">0.00</td>
-                                        <td class="py-2.5" id="a4-tbl-transport">0.00</td>
-                                        <td class="py-2.5" id="a4-tbl-uniform">0.00</td>
-                                        <td class="py-2.5 font-bold" id="a4-tbl-total">0.00</td>
+                                        <td class="py-3 font-bold" id="a4-tbl-grade-year">-</td>
+                                        <td class="py-3" id="a4-tbl-tuition">0.00</td>
+                                        <td class="py-3" id="a4-tbl-books">0.00</td>
+                                        <td class="py-3" id="a4-tbl-transport">0.00</td>
+                                        <td class="py-3" id="a4-tbl-uniform">0.00</td>
+                                        <td class="py-3 font-bold" id="a4-tbl-total">0.00</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
 
-                        <!-- ==================================================================== -->
-                        <!-- TABLE 2: FROM LEFT TO RIGHT (LTR)                                   -->
-                        <!-- Col 1 (Left): Approved Fees | Col 4 (Right): Remaining Fees          -->
-                        <!-- ==================================================================== -->
-                        <div class="my-4">
+                        <!-- ============================================================= -->
+                        <!-- TABLE 2: FINANCIAL BALANCES                                   -->
+                        <!-- ============================================================= -->
+                        <div class="my-6">
                             <table id="a4-table-2" class="official-table" dir="ltr">
                                 <thead>
                                     <tr class="font-bold">
                                         <th style="width: 25%;">المصروفات المعتمدة<br><span class="font-normal text-[10px]">Approved Fees</span></th>
-                                        <th style="width: 25%;">القيمة المسددة<br><span class="font-normal text-[10px]">paid value</span></th>
+                                        <th style="width: 25%;">القيمة المسددة<br><span class="font-normal text-[10px]">Paid Value</span></th>
                                         <th style="width: 25%;">الرسوم الفعلية<br><span class="font-normal text-[10px]">Actual Fees</span></th>
                                         <th style="width: 25%;">الرسوم المتبقية<br><span class="font-normal text-[10px]">Remaining Fees</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="font-bold">
-                                        <td class="py-2.5 font-bold" id="a4-stat-approved">0.00</td>
-                                        <td class="py-2.5" id="a4-stat-paid">0.00</td>
-                                        <td class="py-2.5" id="a4-stat-actual">0.00</td>
-                                        <td class="py-2.5 font-bold" id="a4-stat-remaining">0.00</td>
+                                        <td class="py-3 font-bold" id="a4-stat-approved">0.00</td>
+                                        <td class="py-3" id="a4-stat-paid">0.00</td>
+                                        <td class="py-3" id="a4-stat-actual">0.00</td>
+                                        <td class="py-3 font-bold" id="a4-stat-remaining">0.00</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Accountant Attestation Clause -->
-                        <div class="my-4 text-center font-bold text-[11px] sm:text-xs text-black" dir="rtl">
-                            جميع المعلومات المالية و المحاسبية تمت مراجعتها و التدقيق عليها عن طريق المحاسب و تحت مسئوليته و هذا أقرار منه بذلك ....
+                        <div class="mt-6 mb-4 text-center font-bold text-[11.5px] text-black leading-relaxed" dir="rtl">
+                            جميع المعلومات المالية و المحاسبية تمت مراجعتها و التدقيق عليها عن طريق المحاسب و تحت مسئوليته و هذا إقرار منه بذلك ....
                         </div>
-
-                        <!-- INTENTIONAL GENEROUS WHITE SPACE GAP -->
-                        <div class="h-28 sm:h-36"></div>
                     </div>
 
-                    <!-- BOTTOM CONTENT: SIGNATURES, STAMP, AND DATE (LOWERED TO THE BOTTOM) -->
-                    <div class="pt-4 pb-2 border-t-0 text-black">
+                    <!-- BOTTOM SECTION: SIGNATURES, ONLY STAMP TEXT (NO DASHED BOX), AND ACCREDITATION BANNER -->
+                    <div class="pt-6 text-black">
                         <div class="grid grid-cols-3 gap-2 text-xs font-bold items-start" dir="rtl">
                             
                             <!-- RIGHT: المحاسب/ة: فوز الوجيه -->
                             <div class="text-start">
-                                <p class="mb-1">المحاسب/ة:</p>
-                                <p id="a4-rep-accountant" class="font-bold text-sm text-black">فوز الوجيه</p>
+                                <p class="mb-2 text-slate-700">المحاسب/ة المعتمد/ة:</p>
+                                <p id="a4-rep-accountant" class="font-bold text-sm text-black border-b border-dotted border-black/50 pb-1.5 inline-block min-w-[130px]">فوز الوجيه</p>
                             </div>
 
-                            <!-- CENTER: ختم المدرسة / School Stamp -->
+                            <!-- CENTER: ختم المدرسة (نص توضيحي رسمي فقط) -->
                             <div class="text-center">
-                                <p class="mb-1">ختم المدرسه</p>
-                                <p class="text-[10px] text-black">School Stam</p>
-                                <div class="w-16 h-16 mx-auto rounded-full border border-dashed border-slate-400 flex items-center justify-center text-[9px] text-slate-400 rotate-[-12deg] mt-2">
-                                    STAMP
-                                </div>
+                                <p class="font-black text-sm text-black mb-0.5">ختم المدرسة</p>
+                                <p class="text-[10px] text-slate-700 font-bold uppercase tracking-wider">School Stamp</p>
+                                <div class="h-14"></div> <!-- مساحة نظيفة مخصصة للختم الحي أو المعتمد -->
                             </div>
 
                             <!-- LEFT: يعتمد بتاريخ -->
                             <div class="text-end" dir="rtl">
-                                <p>يعتمد بتاريخ:</p>
-                                <p id="a4-rep-date" class="mt-1 font-mono font-bold">-</p>
+                                <p class="mb-2 text-slate-700">يعتمد بتاريخ:</p>
+                                <p id="a4-rep-date" class="font-mono font-bold text-sm text-black border-b border-dotted border-black/50 pb-1.5 inline-block min-w-[110px] text-center">-</p>
                             </div>
 
+                        </div>
+
+                        <!-- BOTTOM OFFICIAL ADEK ACCREDITATION STATEMENT -->
+                        <div class="mt-4 pt-2.5 border-t border-slate-300 text-center">
+                            <p class="text-[10px] font-bold text-slate-800 leading-tight" dir="rtl">
+                                <i class="fa-solid fa-certificate text-brand-700 me-1"></i>
+                                هذا التقرير رسمي ومعتمد صادر عن مدرسة الثروات الوطنية الخاصة ومعتمد لدى دائرة التعليم والمعرفة (ADEK).
+                            </p>
+                            <p class="text-[8.5px] font-semibold text-slate-500 uppercase tracking-wide mt-0.5" dir="ltr">
+                                This is an official accredited statement issued by Altharawat National Private School, certified by ADEK.
+                            </p>
                         </div>
                     </div>
 
@@ -1118,6 +1124,7 @@
         </div>
     </div>
 
+    <!-- Hidden section strictly for native direct printing -->
     <div id="print-section" class="hidden"></div>
 
     <!-- SCRIPT LOGIC -->
@@ -1128,10 +1135,8 @@
         schoolId: "9254",
         defaultAccountant: "فوز الوجيه",
         currency: "AED",
-        storagePrefix: "ALTHARAWAT_APP_DATA_V9_",
-        officialWordUrl: "https://www.image2url.com/r2/default/files/1788599856569-bc638f9d-1404-439f-affe-555c9dc66ee6.docx",
+        storagePrefix: "ALTHARAWAT_APP_DATA_V12_",
         
-        // الروابط الافتراضية الثابتة لشعارات المدرسة ودائرة التعليم والمعرفة
         defaultTnsLogo: "https://videotourl.com/images/1788614940875-c5ddf863-9643-4631-a2af-6daeb43e6cf3.png",
         defaultAdekLogo: "https://videotourl.com/images/1788614906899-70f52465-070b-40d3-95cf-e8779c1fc2f7.png"
     };
@@ -1152,6 +1157,14 @@
         { code: "G11", nameAr: "الصف الحادي عشر (G11)" },
         { code: "G12", nameAr: "الصف الثاني عشر (G12)" }
     ];
+
+    function getTodayLocalDate() {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
 
     function generateAcademicYears() {
         const years = [];
@@ -1188,7 +1201,6 @@
         students: [],
         reports: [],
         feeBenchmarks: [],
-        wordTemplates: [],
         settings: {
             schoolNameAr: CONFIG.schoolNameAr,
             schoolNameEn: CONFIG.schoolNameEn,
@@ -1311,16 +1323,7 @@
             ]);
             State.reports = LocalStore.get("reports", []);
             State.feeBenchmarks = LocalStore.get("feeBenchmarks", getDefaultBenchmarks(DEFAULT_YEAR));
-            State.wordTemplates = LocalStore.get("wordTemplates", [
-                {
-                    id: "default_adek_template",
-                    name: "قالب تقرير الرسوم الرسمي المعتمد (ADEK)",
-                    url: CONFIG.officialWordUrl,
-                    desc: "النموذج الرسمي المعتمد لمدرسة الثروات الوطنية الخاصة"
-                }
-            ]);
             
-            // Load Settings safely and ensure custom or default logos
             const savedSettings = LocalStore.get("settings", {});
             State.settings = {
                 ...State.settings,
@@ -1434,9 +1437,7 @@
         }
     };
 
-    // ==========================================================
     // STUDENTS MODULE
-    // ==========================================================
     const Students = {
         render() {
             const tbody = document.getElementById('students-table-body');
@@ -1727,16 +1728,16 @@
         }
     };
 
-    // ==========================================================
-    // REPORTS LOGIC, TRANSPORT TOGGLE & ADVANCED SEARCH
-    // ==========================================================
+    // REPORTS LOGIC, NATIVE WORD EXPORT WITH EMBEDDED LOGOS & ADVANCED SEARCH
     const Reports = {
         currentReport: null,
         selectedStudentId: null,
 
         initCreate() {
+            const today = getTodayLocalDate();
             const dateInput = document.getElementById('rep-date');
-            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+            if (dateInput) dateInput.value = today;
+
             const accInput = document.getElementById('rep-accountant');
             if (accInput) accInput.value = State.settings.principal || CONFIG.defaultAccountant;
             
@@ -1962,7 +1963,7 @@
                 actualFees: actualFees,
                 remaining: remaining,
                 accountant: document.getElementById('rep-accountant').value.trim() || CONFIG.defaultAccountant,
-                reportDate: document.getElementById('rep-date').value
+                reportDate: document.getElementById('rep-date').value || getTodayLocalDate()
             };
 
             State.reports.unshift(report);
@@ -2021,14 +2022,13 @@
         openPreview(report) {
             this.currentReport = report;
 
-            // Load directly from State.settings saved from settings view
+            // Direct assignment of logos from settings
             const tnsImg = document.getElementById('a4-tns-logo-img');
             const adekImg = document.getElementById('a4-adek-logo-img');
 
             if (tnsImg) {
                 tnsImg.src = State.settings.tnsLogo || CONFIG.defaultTnsLogo;
             }
-
             if (adekImg) {
                 adekImg.src = State.settings.adekLogo || CONFIG.defaultAdekLogo;
             }
@@ -2041,16 +2041,21 @@
             document.getElementById('a4-stu-dob-ar').innerText = report.birthDate || "-";
             document.getElementById('a4-stu-id').innerText = report.studentCode;
             document.getElementById('a4-stu-id-ar').innerText = report.studentCode;
-            document.getElementById('a4-stu-grade-en').innerText = `${report.grade} / ${report.academicYear.replace('-', '/')}`;
-            document.getElementById('a4-stu-grade-ar').innerText = `${report.grade} / ${report.academicYear.replace('-', '/')}`;
 
             const yearSlash = report.academicYear.replace('-', '/');
+            
+            // Separate Academic Year and Grade lines
+            document.getElementById('a4-stu-year-en').innerText = yearSlash;
+            document.getElementById('a4-stu-year-ar').innerText = yearSlash;
+            document.getElementById('a4-stu-grade-en').innerText = report.grade;
+            document.getElementById('a4-stu-grade-ar').innerText = report.grade;
+
             document.getElementById('a4-rep-year-ar').innerText = yearSlash;
             document.getElementById('a4-rep-year-en').innerText = yearSlash;
             document.getElementById('a4-rep-grade-title').innerText = report.grade;
             document.getElementById('a4-rep-grade-en').innerText = report.grade;
 
-            // Table 1 (LTR: Grade/Year on Left -> Total on Right)
+            // Table 1 (LTR)
             document.getElementById('a4-tbl-grade-year').innerText = `${report.grade} / ${yearSlash}`;
             document.getElementById('a4-tbl-tuition').innerText = Number(report.tuitionFee).toFixed(2);
             document.getElementById('a4-tbl-books').innerText = Number(report.booksFee).toFixed(2);
@@ -2058,21 +2063,15 @@
             document.getElementById('a4-tbl-uniform').innerText = Number(report.uniformFee).toFixed(2);
             document.getElementById('a4-tbl-total').innerText = Number(report.approvedFees).toFixed(2);
 
-            // Table 2 (LTR: Approved Fees on Left -> Remaining on Right)
+            // Table 2 (LTR)
             document.getElementById('a4-stat-approved').innerText = Number(report.approvedFees).toFixed(2);
             document.getElementById('a4-stat-paid').innerText = Number(report.paid).toFixed(2);
             document.getElementById('a4-stat-actual').innerText = Number(report.actualFees).toFixed(2);
             document.getElementById('a4-stat-remaining').innerText = Number(report.remaining).toFixed(2);
 
-            // Signatures & Date
+            // Signatures & Today's Auto Date
             document.getElementById('a4-rep-accountant').innerText = report.accountant || CONFIG.defaultAccountant;
-            document.getElementById('a4-rep-date').innerText = report.reportDate;
-
-            const wtSelect = document.getElementById('report-modal-word-selector');
-            if (wtSelect) {
-                wtSelect.innerHTML = '';
-                State.wordTemplates.forEach(t => wtSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`);
-            }
+            document.getElementById('a4-rep-date').innerText = report.reportDate || getTodayLocalDate();
 
             document.getElementById('report-view-modal').classList.remove('hidden');
         },
@@ -2083,7 +2082,8 @@
         },
 
         triggerPrint() {
-            document.getElementById('print-section').innerHTML = document.getElementById('printable-a4-sheet').outerHTML;
+            const printSec = document.getElementById('print-section');
+            printSec.innerHTML = document.getElementById('printable-a4-sheet').outerHTML;
             window.print();
         },
 
@@ -2097,64 +2097,185 @@
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             }).from(document.getElementById('printable-a4-sheet')).save().then(() => {
-                UI.showToast("تم تنزيل ملف PDF المعتمد", "success");
+                UI.showToast("تم تنزيل ملف PDF المعتمد بنجاح", "success");
             });
         },
 
-        async downloadSelectedWord() {
+        // NATIVE WORD EXPORT WITH EMBEDDED IMAGES & IDENTICAL FORMATTING
+        downloadNativeWord() {
             if (!this.currentReport) return;
-            const tId = document.getElementById('report-modal-word-selector').value;
-            const template = State.wordTemplates.find(t => t.id === tId) || State.wordTemplates[0];
-            if (!template || !template.url) { UI.showToast("يرجى تعيين رابط قالب Word صالح", "error"); return; }
+            UI.showToast("جارٍ تصدير تقرير Word مع الشعارات والتنسيق...", "info");
 
-            UI.showToast("جارٍ تعبئة النموذج الرسمي في ملف Word...", "info");
-            try {
-                const res = await fetch(template.url);
-                if (!res.ok) throw new Error();
-                const blob = await res.blob();
-                const arrayBuffer = await blob.arrayBuffer();
+            const sheetEl = document.getElementById('printable-a4-sheet');
+            if (!sheetEl) return;
 
-                const zip = new PizZip(arrayBuffer);
-                const doc = new window.docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+            const tnsImgSrc = document.getElementById('a4-tns-logo-img').src;
+            const adekImgSrc = document.getElementById('a4-adek-logo-img').src;
 
-                doc.render({
-                    STUDENT_NAME: this.currentReport.nameAr,
-                    STUDENT_NAME_AR: this.currentReport.nameAr,
-                    STUDENT_NAME_EN: this.currentReport.nameEn,
-                    ESIS_ID: this.currentReport.studentCode,
-                    STUDENT_ID: this.currentReport.studentCode,
-                    EMIRATES_ID: this.currentReport.emiratesId,
-                    EID: this.currentReport.emiratesId,
-                    BIRTH_DATE: this.currentReport.birthDate || "",
-                    GRADE: this.currentReport.grade,
-                    ACADEMIC_YEAR: this.currentReport.academicYear,
-                    YEAR: this.currentReport.academicYear,
-                    TUITION_FEE: Number(this.currentReport.tuitionFee).toFixed(2),
-                    BOOKS_FEE: Number(this.currentReport.booksFee).toFixed(2),
-                    TRANSPORT_FEE: Number(this.currentReport.transportFee).toFixed(2),
-                    UNIFORM_FEE: Number(this.currentReport.uniformFee).toFixed(2),
-                    TOTAL_FEES: Number(this.currentReport.approvedFees).toFixed(2),
-                    APPROVED_FEES: Number(this.currentReport.approvedFees).toFixed(2),
-                    PAID: Number(this.currentReport.paid).toFixed(2),
-                    ACTUAL_FEES: Number(this.currentReport.actualFees).toFixed(2),
-                    REMAINING: Number(this.currentReport.remaining).toFixed(2),
-                    ACCOUNTANT: this.currentReport.accountant,
-                    REPORT_DATE: this.currentReport.reportDate,
-                    DATE: this.currentReport.reportDate,
-                    SCHOOL_ID: CONFIG.schoolId,
-                    SCHOOL_NAME_AR: CONFIG.schoolNameAr,
-                    SCHOOL_NAME_EN: CONFIG.schoolNameEn
-                });
+            const htmlContent = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head>
+                <meta charset="utf-8">
+                <title>ADEK School Fees Report</title>
+                <style>
+                    @page Section1 { size: 595.3pt 841.9pt; margin: 25pt 35pt 25pt 35pt; mso-header-margin: 0pt; mso-footer-margin: 0pt; }
+                    div.Section1 { page: Section1; font-family: 'Arial', 'Cairo', sans-serif; }
+                    table.official-table { width: 100%; border-collapse: collapse; margin-top: 10pt; margin-bottom: 15pt; }
+                    table.official-table th, table.official-table td { border: 1pt solid #000; padding: 6pt 3pt; text-align: center; font-size: 10pt; font-family: Arial, 'Cairo', sans-serif; }
+                    table.header-table { width: 100%; border-collapse: collapse; margin-bottom: 10pt; }
+                    table.header-table td { border: none; padding: 2pt; font-size: 9.5pt; }
+                    .title { text-align: center; font-size: 15pt; font-weight: bold; margin-bottom: 2pt; }
+                    .subtitle { text-align: center; font-size: 10.5pt; font-weight: bold; margin-bottom: 8pt; }
+                    .bold { font-weight: bold; }
+                    .center { text-align: center; }
+                    .right { text-align: right; }
+                    .left { text-align: left; }
+                </style>
+            </head>
+            <body lang="AR-AE" dir="ltr">
+                <div class="Section1">
+                    <!-- Top Logos -->
+                    <table style="width: 100%; border: none; margin-bottom: 8pt;">
+                        <tr>
+                            <td style="width: 50%; text-align: left; border: none;">
+                                <img src="${tnsImgSrc}" width="140" height="60" style="object-fit: contain;" alt="TNS Logo">
+                            </td>
+                            <td style="width: 50%; text-align: right; border: none;">
+                                <img src="${adekImgSrc}" width="160" height="60" style="object-fit: contain;" alt="ADEK Logo">
+                            </td>
+                        </tr>
+                    </table>
 
-                const out = doc.getZip().generate({
-                    type: "blob",
-                    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                });
-                saveAs(out, `ADEK_Report_${this.currentReport.studentCode}.docx`);
-                UI.showToast("تم تنزيل ملف Word بنجاح", "success");
-            } catch {
-                UI.showToast("تعذر جلب ملف Word عبر الرابط بسبب قيود CORS.", "error");
-            }
+                    <div class="title">تقرير الرسوم الدراسية</div>
+                    <div class="subtitle">SCHOOL FEES REPORT</div>
+
+                    <!-- Particulars Table -->
+                    <table class="header-table" dir="ltr">
+                        <tr>
+                            <td class="left" style="width: 50%;"><span class="bold">School Name:</span> Altharawat National Private School</td>
+                            <td class="right" dir="rtl" style="width: 50%;"><span class="bold">اسم المدرسة:</span> الثروات الوطنية الخاصة</td>
+                        </tr>
+                        <tr>
+                            <td class="left"><span class="bold">School ID:</span> 9254</td>
+                            <td class="right" dir="rtl"><span class="bold">رقم المدرسة:</span> 9254</td>
+                        </tr>
+                        <tr>
+                            <td class="left"><span class="bold">School administration certifies that student:</span> <span class="bold">${this.currentReport.nameEn}</span></td>
+                            <td class="right" dir="rtl"><span class="bold">تشهد إدارة المدرسة أن الطالب/ة:</span> <span class="bold">${this.currentReport.nameAr}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="left"><span class="bold">EID No:</span> ${this.currentReport.emiratesId}</td>
+                            <td class="right" dir="rtl"><span class="bold">رقم الهوية:</span> ${this.currentReport.emiratesId}</td>
+                        </tr>
+                        <tr>
+                            <td class="left"><span class="bold">Birth Date:</span> ${this.currentReport.birthDate || '-'}</td>
+                            <td class="right" dir="rtl"><span class="bold">تاريخ الميلاد:</span> ${this.currentReport.birthDate || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td class="left"><span class="bold">Student eSIS ID:</span> <span class="bold">${this.currentReport.studentCode}</span></td>
+                            <td class="right" dir="rtl"><span class="bold">رقم الطالب:</span> <span class="bold">${this.currentReport.studentCode}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="left"><span class="bold">Academic Year:</span> <span class="bold">${this.currentReport.academicYear.replace('-', '/')}</span></td>
+                            <td class="right" dir="rtl"><span class="bold">السنة الدراسية:</span> <span class="bold">${this.currentReport.academicYear.replace('-', '/')}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="left"><span class="bold">Is registered in Grade:</span> <span class="bold">${this.currentReport.grade}</span></td>
+                            <td class="right" dir="rtl"><span class="bold">مقيدة/ بالصف الدراسي:</span> <span class="bold">${this.currentReport.grade}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="left bold">And is currently pursuing study</td>
+                            <td class="right bold" dir="rtl">وهو / هي مستمر(ة) بالدراسه حتي تاريخه</td>
+                        </tr>
+                    </table>
+
+                    <!-- Headline text -->
+                    <div style="text-align: center; margin-top: 10pt; font-size: 10pt; font-weight: bold;">
+                        الرسوم الدراسية المعتمدة من قبل دائرة التعليم والمعرفة للعام الدراسي ${this.currentReport.academicYear.replace('-', '/')} لمدرسة الثروات الوطنية الخاصة الصف ${this.currentReport.grade} كالآتي:
+                    </div>
+                    <div style="text-align: center; margin-bottom: 12pt; font-size: 9.5pt; font-weight: bold;">
+                        ADEK ${this.currentReport.academicYear.replace('-', '/')} approved fees for (Altharawat National Private School) Grade ${this.currentReport.grade} as below:
+                    </div>
+
+                    <!-- Table 1 -->
+                    <table class="official-table" dir="ltr">
+                        <thead>
+                            <tr style="font-weight: bold; background-color: #f2f2f2;">
+                                <th>الصف/ السنة<br><span style="font-weight: normal; font-size: 8.5pt;">Grade/Year</span></th>
+                                <th>الرسوم الدراسية<br><span style="font-weight: normal; font-size: 8.5pt;">Academic Tuition</span></th>
+                                <th>الكتب الدراسية<br><span style="font-weight: normal; font-size: 8.5pt;">Books</span></th>
+                                <th>المواصلات المدرسية<br><span style="font-weight: normal; font-size: 8.5pt;">Transportation</span></th>
+                                <th>الزي المدرسي<br><span style="font-weight: normal; font-size: 8.5pt;">Uniform</span></th>
+                                <th>المجموع الكلي<br><span style="font-weight: normal; font-size: 8.5pt;">Total</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="font-weight: bold;">
+                                <td>${this.currentReport.grade} / ${this.currentReport.academicYear.replace('-', '/')}</td>
+                                <td>${Number(this.currentReport.tuitionFee).toFixed(2)}</td>
+                                <td>${Number(this.currentReport.booksFee).toFixed(2)}</td>
+                                <td>${Number(this.currentReport.transportFee).toFixed(2)}</td>
+                                <td>${Number(this.currentReport.uniformFee).toFixed(2)}</td>
+                                <td>${Number(this.currentReport.approvedFees).toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Table 2 -->
+                    <table class="official-table" dir="ltr">
+                        <thead>
+                            <tr style="font-weight: bold; background-color: #f2f2f2;">
+                                <th>المصروفات المعتمدة<br><span style="font-weight: normal; font-size: 8.5pt;">Approved Fees</span></th>
+                                <th>القيمة المسددة<br><span style="font-weight: normal; font-size: 8.5pt;">Paid Value</span></th>
+                                <th>الرسوم الفعلية<br><span style="font-weight: normal; font-size: 8.5pt;">Actual Fees</span></th>
+                                <th>الرسوم المتبقية<br><span style="font-weight: normal; font-size: 8.5pt;">Remaining Fees</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="font-weight: bold;">
+                                <td>${Number(this.currentReport.approvedFees).toFixed(2)}</td>
+                                <td>${Number(this.currentReport.paid).toFixed(2)}</td>
+                                <td>${Number(this.currentReport.actualFees).toFixed(2)}</td>
+                                <td>${Number(this.currentReport.remaining).toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div style="text-align: center; font-weight: bold; font-size: 10.5pt; margin-top: 15pt; margin-bottom: 25pt;">
+                        جميع المعلومات المالية و المحاسبية تمت مراجعتها و التدقيق عليها عن طريق المحاسب و تحت مسئوليته و هذا إقرار منه بذلك ....
+                    </div>
+
+                    <!-- Signatures (NO DASHED BOX - CLEAN STAMP TEXT) -->
+                    <table style="width: 100%; border: none; margin-top: 20pt;" dir="rtl">
+                        <tr>
+                            <td style="width: 33%; text-align: right; border: none; vertical-align: top;">
+                                <b>المحاسب/ة المعتمد/ة:</b><br><br>
+                                <span style="border-bottom: 1px dotted #000; padding-bottom: 3px; font-weight: bold;">${this.currentReport.accountant}</span>
+                            </td>
+                            <td style="width: 34%; text-align: center; border: none; vertical-align: top;">
+                                <b>ختم المدرسة</b><br>
+                                <span style="font-size: 9pt; color: #555;">School Stamp</span>
+                            </td>
+                            <td style="width: 33%; text-align: left; border: none; vertical-align: top;" dir="rtl">
+                                <b>يعتمد بتاريخ:</b><br><br>
+                                <span style="border-bottom: 1px dotted #000; padding-bottom: 3px; font-weight: bold;">${this.currentReport.reportDate}</span>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div style="text-align: center; border-top: 1px solid #ccc; padding-top: 10pt; margin-top: 25pt;">
+                        <p style="font-size: 9pt; font-weight: bold; margin: 0;">هذا التقرير رسمي ومعتمد صادر عن مدرسة الثروات الوطنية الخاصة ومعتمد لدى دائرة التعليم والمعرفة (ADEK).</p>
+                        <p style="font-size: 8pt; color: #555; text-transform: uppercase; margin: 2pt 0 0 0;">This is an official accredited statement issued by Altharawat National Private School, certified by ADEK.</p>
+                    </div>
+                </div>
+            </body>
+            </html>`;
+
+            const blob = new Blob(['\ufeff' + htmlContent], {
+                type: 'application/msword;charset=utf-8'
+            });
+            saveAs(blob, `ADEK_Report_${this.currentReport.studentCode}_${this.currentReport.reportNumber}.doc`);
+            UI.showToast("تم تنزيل ملف Word المعتمد بنجاح مع الشعارات الكاملة", "success");
         },
 
         async delete(ref) {
@@ -2168,66 +2289,25 @@
         }
     };
 
-    const WordTemplates = {
-        render() {
-            const container = document.getElementById('word-templates-list');
-            if (!container) return;
-            container.innerHTML = '';
-            State.wordTemplates.forEach(t => {
-                const card = document.createElement('div');
-                card.className = "bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between";
-                card.innerHTML = `
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center text-sm">
-                                <i class="fa-solid fa-file-word"></i>
-                            </span>
-                            <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">معتمد ADEK</span>
-                        </div>
-                        <h4 class="font-black text-xs text-slate-900 dark:text-white">${t.name}</h4>
-                        <p class="text-[10px] font-mono text-slate-400 break-all mt-2 bg-white dark:bg-slate-800 p-1.5 rounded border border-slate-200 dark:border-slate-700">${t.url}</p>
-                    </div>
-                    <div class="flex items-center justify-between pt-2 mt-3 border-t border-slate-200 dark:border-slate-700 text-xs">
-                        <a href="${t.url}" target="_blank" class="text-blue-600 font-bold text-[11px]">تنزيل القالب</a>
-                        ${t.id !== 'default_adek_template' ? `<button onclick="WordTemplates.delete('${t.id}')" class="text-rose-600 font-bold text-[11px]">حذف</button>` : '<span class="text-slate-400 text-[10px]">أساسي</span>'}
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        },
-        openModal() {
-            document.getElementById('wt-id').value = "";
-            document.getElementById('wt-name').value = "";
-            document.getElementById('wt-url').value = "";
-            document.getElementById('word-template-modal').classList.remove('hidden');
-        },
-        closeModal() { document.getElementById('word-template-modal').classList.add('hidden'); },
-        async save(e) {
-            e.preventDefault();
-            const id = "WT_" + Date.now();
-            const name = document.getElementById('wt-name').value.trim();
-            const url = document.getElementById('wt-url').value.trim();
-            const newT = { id, name, url };
-            State.wordTemplates.push(newT);
-            await FirebaseSync.saveDoc("wordTemplates", id, newT);
-            this.closeModal();
-            this.render();
-            UI.showToast("تم حفظ قالب Word بنجاح", "success");
-        },
-        async delete(id) {
-            if (confirm("حذف هذا القالب؟")) {
-                State.wordTemplates = State.wordTemplates.filter(t => t.id !== id);
-                await FirebaseSync.deleteDoc("wordTemplates", id);
-                UI.showToast("تم حذف القالب", "info");
-                this.render();
-            }
-        }
-    };
-
-    // ==========================================================
-    // SETTINGS MODULE (MANAGING LOGOS & DATA CENTRALLY)
-    // ==========================================================
+    // SETTINGS MODULE (MANAGING LOGOS VIA URL OR LOCAL FILE UPLOAD)
     const Settings = {
+        handleFileUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64Data = e.target.result;
+                if (type === 'tns') {
+                    document.getElementById('set-tns-logo').value = base64Data;
+                } else if (type === 'adek') {
+                    document.getElementById('set-adek-logo').value = base64Data;
+                }
+                this.previewLogos();
+                UI.showToast(`تم تحميل وحفظ صورة شعار ${type === 'tns' ? 'المدرسة' : 'ADEK'} بنجاح`, "success");
+            };
+            reader.readAsDataURL(file);
+        },
+
         previewLogos() {
             const tnsVal = document.getElementById('set-tns-logo').value.trim();
             const adekVal = document.getElementById('set-adek-logo').value.trim();
@@ -2251,19 +2331,19 @@
             State.settings.tnsLogo = tnsInput || CONFIG.defaultTnsLogo;
             State.settings.adekLogo = adekInput || CONFIG.defaultAdekLogo;
 
-            // Apply immediately to the report DOM elements as well
+            // Update on preview template right away
             const reportTns = document.getElementById('a4-tns-logo-img');
             const reportAdek = document.getElementById('a4-adek-logo-img');
             if (reportTns) reportTns.src = State.settings.tnsLogo;
             if (reportAdek) reportAdek.src = State.settings.adekLogo;
 
             LocalStore.set("settings", State.settings);
-            UI.showToast("تم حفظ الإعدادات والشعارات بنجاح وتحديث التقارير فورياً", "success");
+            UI.showToast("تم حفظ الإعدادات والشعارات بنجاح وتحديث التقارير والمعاينة", "success");
         }
     };
 
     const UI = {
-        views: ['dashboard', 'create-report', 'students', 'fees', 'reports-history', 'word-templates', 'settings'],
+        views: ['dashboard', 'create-report', 'students', 'fees', 'reports-history', 'settings'],
         showView(viewName) {
             this.views.forEach(v => {
                 const el = document.getElementById(`view-${v}`);
@@ -2288,7 +2368,6 @@
             if (viewName === 'create-report') Reports.initCreate();
             if (viewName === 'reports-history') Reports.renderHistory();
             if (viewName === 'fees') Fees.render();
-            if (viewName === 'word-templates') WordTemplates.render();
             if (viewName === 'settings') {
                 const a = document.getElementById('set-school-name-ar');
                 if (a) a.value = State.settings.schoolNameAr;
@@ -2339,11 +2418,9 @@
         updateSidebarBadges() {
             const stuBadge = document.getElementById('badge-students-count');
             const repBadge = document.getElementById('badge-reports-count');
-            const wtBadge = document.getElementById('badge-templates-count');
 
             if (stuBadge) stuBadge.innerText = State.students.length;
             if (repBadge) repBadge.innerText = State.reports.length;
-            if (wtBadge) wtBadge.innerText = State.wordTemplates.length;
         },
         showToast(msg, type = 'info') {
             const container = document.getElementById('toast-container');
@@ -2426,7 +2503,6 @@
             Students.render();
             Fees.render();
             Reports.renderHistory();
-            WordTemplates.render();
             UI.updateSidebarBadges();
         }
     };
